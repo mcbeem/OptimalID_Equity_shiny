@@ -17,7 +17,8 @@ library(dplyr)
 library(reshape)
 library(DT)
 library(DescTools)
-
+library(readxl)
+#library(reactable)
 
 
 # define functions --------------------------------------------------------
@@ -549,22 +550,24 @@ equity_plot = function(data,
   
   p = ggplot(data=dplyr::filter(summary_tbl, metric==terse_metric), 
              aes(x=comparison, y=value, fill=comparison))+
-    geom_bar(stat="identity", alpha=.8)+
-    geom_text(aes(label=round(value, 3)), nudge_y=-.06, size=5)+
+    geom_bar(stat="identity", alpha=.65)+
+    geom_text(aes(label=round(value, 3)), nudge_y=-0.01, size=5)+
     geom_hline(yintercept=0)+
     theme_bw()+
-    theme(legend.position="bottom")+
+    theme(legend.position="bottom",
+          axis.text.x = element_text(angle = 45, hjust = 1))+
     scale_fill_brewer(palette="Set1")+
     ggtitle(paste0("Metric: ", plot_metric))+
     theme(text=element_text(size=16))+
     labs(fill=NULL)
   
   if (length(group)==1 & terse_metric != 'CramerV') {
-    p = p + facet_wrap(vars(get(group)))
+    p = p + facet_wrap(vars(get(group)), scales="free_y")
   }
   
   if (length(group)==2 & terse_metric != 'CramerV') {
-    p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])))
+    p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])), 
+                       scales="free_y")
   }
   
   return(p)
@@ -602,55 +605,111 @@ ui <- fluidPage(
       tabPanel("Data",
         shinyjs::useShinyjs(),
         
-        HTML("<br>"),
+        sidebarLayout(
+          sidebarPanel(
         
-        fileInput(
-          inputId = "file",
-          label = "Dataset",
-          multiple = FALSE,
-          accept = NULL,
-          width = NULL,
-          buttonLabel = "Browse...",
-          placeholder = "No file selected"
-        ),
-                
-        helpText(
-          "(Dataset should be prepared according to instructions",
-          a(href="https://r4ds.had.co.nz", target="_blank", "here)")
-        ),
-        
-        radioButtons(
-          inputId = "fileType",
-          label = "Type of file selected",
-          inline = TRUE,
-          choices = c("excel", "csv"),
-          selected = "csv"
-        ),
-        
-        conditionalPanel(
-          condition = "input.fileType == 'excel'",
+          HTML("<br>"),
           
-          numericInput(
-            inputId = "whichSheet",
-            label = "Select sheet for import",
-            min = 1,
-            max = 100,
-            step = 1,
-            value = 1
-          )
-        ),
-        
+          fileInput(
+            inputId = "file",
+            label = "Dataset",
+            multiple = FALSE,
+            accept = NULL,
+            width = NULL,
+            buttonLabel = "Browse...",
+            placeholder = "No file selected"
+          ),
+                  
+          helpText(
+            "(Dataset should be prepared according to instructions",
+            a(href="https://r4ds.had.co.nz", target="_blank", "here)")
+          ),
           
-        actionButton(
-          inputId = "loadFile",
-          label = "Load selected file"
-        ),
+          radioButtons(
+            inputId = "fileType",
+            label = "Type of file selected",
+            inline = TRUE,
+            choices = c("excel", "csv"),
+            selected = "csv"
+          ),
           
-        
-        HTML("<br>"),
-        HTML("<br>"),
-        
-        DTOutput('dat')
+          conditionalPanel(
+            condition = "input.fileType == 'excel'",
+            
+            numericInput(
+              inputId = "whichSheet",
+              label = "Select sheet for import",
+              min = 1,
+              max = 100,
+              step = 1,
+              value = 1
+            )
+          ),
+          
+            
+          actionButton(
+            inputId = "loadFile",
+            label = "Load selected file"
+          ),
+            
+          
+          ), # closes sidebarPanel
+          
+        mainPanel(
+          
+          HTML("<br>"),
+          
+          selectInput(
+            inputId = "filter_group", 
+            label = "Filtering variable(s)", 
+            multiple = TRUE,
+            choices = NULL
+          ),
+          
+          conditionalPanel(
+            condition = "input.filter_group.length >= 1",
+            selectInput(
+              inputId = "filter_reference_grp1", 
+              label = "Levels to select for first filter variable", 
+              choices = NULL,
+              multiple = TRUE,
+            )
+          ),
+          
+          conditionalPanel(
+            condition = "input.filter_group.length >= 2",
+            selectInput(
+              inputId = "filter_reference_grp2", 
+              label = "Levels to select for second filter variable", 
+              choices = NULL,
+              multiple = TRUE
+            )
+          ),
+          
+          conditionalPanel(
+            condition = "input.filter_group.length >= 3",
+            selectInput(
+              inputId = "filter_reference_grp3", 
+              label = "Levels to select for third filter variable", 
+              choices = NULL,
+              multiple = TRUE
+            )
+          ),
+          
+          conditionalPanel(
+            condition = "input.filter_reference_grp1 != ''",
+            actionButton(
+              "applyFilter",
+              "Apply selected filtering"
+            )
+          ),
+          
+          HTML("<br>"),
+          HTML("<br>"),
+          
+          DTOutput('dat')
+          ) # closes mainPanel
+        ) # closes sidebarPalen
         
       ), # closes tabpanel 'data'
       
@@ -721,18 +780,23 @@ ui <- fluidPage(
               value = .9,
               step=.001
               ),
-            
-            selectInput(
-              inputId = "metric", 
-              label = "Equity metric", 
-              choices = c("Count", "Representation Index", "Percent Identified", 
-                          "Relative Risk", "Cramer's V"),
-              selected = "Count"),
       
           ), # closes sidebarPanel
   
         mainPanel(
-          plotOutput("plot"),
+          
+          HTML("<br>"),
+ 
+          selectInput(
+            inputId = "metric", 
+            label = "Equity metric", 
+            choices = c("Count", "Representation Index", "Percent Identified", 
+                        "Relative Risk", "Cramer's V"),
+            selected = "Count"),
+          
+          HTML("<br>"),
+          
+          plotOutput("plot", width="120%", height= "500px"),
         )
       ) # closes sidebarLayout
     ), # closes tabPanel 'Plot'
@@ -763,11 +827,13 @@ server <- function(input, output, session) {
   observeEvent(input$file, {
     shinyjs::enable('loadFile')
   })
+
   
   # initialize the 'dat' reactive object
   dat <- reactiveVal()
   
-  #read data 
+  
+  # do the initial data loading when no filtering has been selected
   observeEvent(input$loadFile, {
     
     infile <- input$file
@@ -783,14 +849,94 @@ server <- function(input, output, session) {
       mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
     }
     
-    output$dat <- renderDataTable({
-      mydata
-    })
+    output$dat <- DT::renderDT(
+      mydata 
+    )
     
     # store the loaded data in the reactive object
     dat(mydata)
     
     })
+  
+  # reload the data and apply filtering
+  observeEvent(input$applyFilter, {
+    
+    infile <- input$file
+    
+    if (is.null(file)) {
+      return(NULL)
+    }
+    
+    # read the data
+    if (input$fileType == 'csv') {
+      mydata <- read.csv(infile$datapath, header = TRUE)
+    } else if (input$fileType == 'excel') {
+      mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
+    }
+    
+    filter_group = input$filter_group
+    
+    #construct the filtering string
+    if (!is.null(filter_group)) {
+      filter_ref_group1 = input$filter_reference_grp1
+      filter_col_type1 = typeof(dat()[[input$filter_group[1]]])
+      
+      if (filter_col_type1 == 'character') {
+        data_filter_string = paste0(filter_group[1], " %in% c(", 
+                                    toString(paste0("'", filter_ref_group1, "'", collapse=","))
+                                    , ")")
+      } else {
+        data_filter_string = paste0(filter_group[1], " %in% c(", 
+                                    toString(filter_ref_group1), ")")
+      }
+      
+      if (length(filter_group) >= 2) {
+        filter_ref_group2 = input$filter_reference_grp2
+        filter_col_type2 = typeof(dat()[[input$filter_group[2]]])
+        
+        if (filter_col_type2 == 'character') {
+          data_filter_string = paste0(data_filter_string, " & ", 
+                                      filter_group[2], " %in% c(", 
+                                      toString(paste0("'", filter_ref_group2, "'", collapse=","))
+                                      , ")")
+        } else {
+          data_filter_string = paste0(data_filter_string, " & ", 
+                                      filter_group[2], " %in% c(", 
+                                      toString(filter_ref_group2), ")")
+        }
+        
+      }
+      
+      if (length(filter_group) >= 3) {
+        
+        filter_ref_group3 = input$filter_reference_grp3
+        filter_col_type3 = typeof(dat()[[input$filter_group[3]]])
+        
+        if (filter_col_type3 == 'character') {
+          data_filter_string = paste0(data_filter_string, " & ", 
+                                      filter_group[3], " %in% c(", 
+                                      toString(paste0("'", filter_ref_group3, "'", collapse=","))
+                                      , ")")
+        } else {
+          data_filter_string = paste0(data_filter_string, " & ", 
+                                      filter_group[3], " %in% c(", 
+                                      toString(filter_ref_group3), ")")
+        }
+        
+      }
+      print(data_filter_string)
+    }
+    
+    mydata <- dplyr::filter(mydata, eval(parse(text=data_filter_string)))
+    
+    output$dat <- DT::renderDT(
+      mydata 
+    )
+    
+    # store the loaded data in the reactive object
+    dat(mydata)
+    
+  })
   
     
     # get the column names from the dataset
@@ -804,6 +950,12 @@ server <- function(input, output, session) {
       updateSelectInput(
         session = session, 
         inputId = "group", 
+        choices = variable_names()
+      )
+      
+      updateSelectInput(
+        session = session, 
+        inputId = "filter_group", 
         choices = variable_names()
       )
     })
@@ -844,6 +996,64 @@ server <- function(input, output, session) {
       
     })
     
+    # this executes when the user selects a filtering group
+    observe({
+      filter_group = input$filter_group
+      
+      if (!is.null(filter_group)) {  
+        if (!is.na(filter_group[1])) {
+          
+          filter_group1_levels <- reactive({
+            filter_group1_levels <-  dat() %>% dplyr::select(filter_group[1]) %>% unique()
+          })
+          
+          updateSelectInput(
+            session = session, 
+            inputId = "filter_reference_grp1", 
+            choices = filter_group1_levels()
+          )
+        }
+      }
+    })
+    
+    observe({
+      filter_group = input$filter_group
+      
+      if (!is.null(filter_group)) {  
+        if (!is.na(filter_group[2])) {
+          
+          filter_group2_levels <- reactive({
+            filter_group2_levels <-  dat() %>% dplyr::select(filter_group[2]) %>% unique()
+          })
+          
+          updateSelectInput(
+            session = session, 
+            inputId = "filter_reference_grp2", 
+            choices = filter_group2_levels()
+          )
+        }
+      }
+    })
+    
+    
+    observe({
+      filter_group = input$filter_group
+      
+      if (!is.null(filter_group)) {  
+        if (!is.na(filter_group[3])) {
+          
+          filter_group3_levels <- reactive({
+            filter_group3_levels <-  dat() %>% dplyr::select(filter_group[3]) %>% unique()
+          })
+          
+          updateSelectInput(
+            session = session, 
+            inputId = "filter_reference_grp3", 
+            choices = filter_group3_levels()
+          )
+        }
+      }
+    })
     
     observe({
       updateSelectInput(
@@ -873,13 +1083,13 @@ server <- function(input, output, session) {
         choices = variable_names())
     })
   
+    
   # this runs when the group box is touched
   observe({
   
     group = input$group 
     
     #construct the filtering string
-    
     if (!is.null(group)) {
       ref_group1 = input$reference_grp1
       col_type1 = typeof(dat()[[input$group[1]]])
@@ -905,6 +1115,7 @@ server <- function(input, output, session) {
     
     output$plot <- renderPlot({
       
+      
       if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
         equity_plot(data=dat(),
                     group=input$group,
@@ -919,7 +1130,7 @@ server <- function(input, output, session) {
       
     }) 
     
-    output$tbl <- renderDataTable({
+    output$tbl <- DT::renderDataTable({
       
       if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
         tbl_long = get_equity(data=dat(),
@@ -932,7 +1143,8 @@ server <- function(input, output, session) {
                      adj_test_cutoff_z = pnorm(input$mean_cutoff),
                      baseline_id_var=input$baseline_id_var)
       
-        tbl_long$value = formatC(round(tbl_long$value, 3), 3)
+        #tbl_long$value = formatC(round(tbl_long$value, 3), 3)
+        tbl_long$value = round(tbl_long$value, 3)
         
         tbl_wide = pivot_wider(
                     dplyr::filter(tbl_long, metric %in% 
@@ -956,7 +1168,7 @@ server <- function(input, output, session) {
         
       }
         
-      })
+      }, filter="top")
     
       output$descr_table <- renderDataTable({
         
@@ -968,7 +1180,7 @@ server <- function(input, output, session) {
           )
           
         }
-    })
+    }, filter="top")
     
     
   }) # closes observe
