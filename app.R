@@ -10,6 +10,7 @@
 library(shiny)
 library(shinyjs)
 library(shinythemes)
+library(htmltools)
 library(here)
 library(ggplot2)
 library(tidyr)
@@ -112,11 +113,16 @@ descr_table = function(data, vars, group=NA, digits=2,
 
 
 # define function for assigning gifted status based on optimal id
-identify_opti <- function(data, assessments, nom, nom_cutoff, adj_test_cutoff_z,
+identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
                           mode = "decisions", weights = NA) {
+  
   if (mode %!in% c("decisions", "meanscores")) {
     stop("argument 'mode' must be one of 'decisions' or 'meanscores'")
   }
+  
+  # calculate nomination cutoff at empirical percentile
+  #nom_cutoff_val = quantile(data[nom], nom_cutoff, type=3, na.rm=TRUE)
+  nom_cutoff_val = qnorm(nom_cutoff)
   
   
   # if no weights were given, set them all to 1
@@ -130,9 +136,16 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, adj_test_cutoff_z,
   # shortcut for calculating mean (as weighted sum)
   meanscore <- as.matrix(data[, assessments]) %*% w
   
-  # shrinkage-adjusted cutoff
+  # normalize the mean so it has an SD of 1
+  meanscore <- meanscore / sd(meanscore, na.rm=TRUE)
   
-  opti_gifted <- data[, nom] >= qnorm(nom_cutoff) & meanscore >= adj_test_cutoff_z
+  # calculate test cutoff at empirical percntile
+  #test_cutoff_val = quantile(meanscore, test_cutoff, type=3, na.rm=TRUE)
+  test_cutoff_val = qnorm(test_cutoff)
+  
+  
+  # shrinkage-adjusted cutoff
+  opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)
   
   if (mode == "decisions") {
     return(opti_gifted)
@@ -452,12 +465,12 @@ equity_table_to_long <- function(eq_tbl, group=NA, total_var, target_vars) {
 ### Define master function for calculating equity statistics ###
 
 get_equity <- function(data, group, reference_grp, assessments, nom, nom_cutoff, 
-                       adj_test_cutoff_z, baseline_id_var, weights = NA) {
+                       test_cutoff, baseline_id_var, weights = NA) {
   
   # create a designator variable for identification under optimal id
   data$opti_gifted <- identify_opti(
     data = data, assessments = assessments, nom = nom, nom_cutoff = nom_cutoff, 
-    adj_test_cutoff_z = adj_test_cutoff_z, mode="decisions", weights=weights)
+    test_cutoff = test_cutoff, mode="decisions", weights=weights)
   
   # calculate equity table statistics
   eq_tbl <- equity_table(
@@ -523,15 +536,13 @@ equity_plot = function(data,
                        baseline_id_var,
                        plot_metric)  {
   
-  adj_test_cutoff_z = qnorm(mean_cutoff)
-  
   summary_tbl = get_equity(data=data,
                            group=group,
                            reference_grp=reference_grp,
                            assessments=assessments,
                            nom=nom,
                            nom_cutoff=nom_cutoff,
-                           adj_test_cutoff_z=adj_test_cutoff_z,
+                           test_cutoff=mean_cutoff,
                            baseline_id_var=baseline_id_var)
   
   # this line filters out any row from the summary table with an NA for any
@@ -544,7 +555,7 @@ equity_plot = function(data,
     plot_metric == 'Count' ~ 'count',
     plot_metric == 'Representation Index' ~ 'RI',
     plot_metric == 'Relative Risk' ~ 'RR',
-    plot_metric == 'Percent Identified' ~ 'pct_identified',
+    plot_metric == 'Proportion Identified' ~ 'pct_identified',
     plot_metric == "Cramer's V"~ 'CramerV'
   )
   
@@ -600,6 +611,10 @@ ui <- fluidPage(
     tabsetPanel(
 
       tabPanel("About",
+               
+               HTML("<br>"),
+               HTML("<br>"),
+               htmltools::includeMarkdown("helptext.md")
         ),
       
       tabPanel("Data",
@@ -790,7 +805,7 @@ ui <- fluidPage(
           selectInput(
             inputId = "metric", 
             label = "Equity metric", 
-            choices = c("Count", "Representation Index", "Percent Identified", 
+            choices = c("Count", "Representation Index", "Proportion Identified", 
                         "Relative Risk", "Cramer's V"),
             selected = "Count"),
           
@@ -812,6 +827,13 @@ ui <- fluidPage(
          DTOutput('descr_table')
        )
     ),
+  
+  tabPanel("Info on metrics",
+           
+           HTML("<br>"),
+           HTML("<br>"),
+           htmltools::includeMarkdown("metrics.md")
+  ),
   ) # closes tabsetPanel
 ) # closes fluidPage
 
@@ -862,11 +884,11 @@ server <- function(input, output, session) {
   observeEvent(input$applyFilter, {
     
     infile <- input$file
-    
+
     if (is.null(file)) {
       return(NULL)
     }
-    
+
     # read the data
     if (input$fileType == 'csv') {
       mydata <- read.csv(infile$datapath, header = TRUE)
@@ -924,13 +946,12 @@ server <- function(input, output, session) {
         }
         
       }
-      print(data_filter_string)
     }
     
     mydata <- dplyr::filter(mydata, eval(parse(text=data_filter_string)))
     
     output$dat <- DT::renderDT(
-      mydata 
+      mydata
     )
     
     # store the loaded data in the reactive object
@@ -1139,8 +1160,7 @@ server <- function(input, output, session) {
                      assessments=input$assessments,
                      nom=input$nom,
                      nom_cutoff=input$nom_cutoff,
-                     #mean_cutoff=mean_cutoff,
-                     adj_test_cutoff_z = pnorm(input$mean_cutoff),
+                     test_cutoff=input$mean_cutoff,
                      baseline_id_var=input$baseline_id_var)
       
         #tbl_long$value = formatC(round(tbl_long$value, 3), 3)
