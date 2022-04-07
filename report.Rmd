@@ -1,0 +1,31 @@
+---
+title: "Optimal ID report"
+date: '2022-04-07'
+params:
+  file: NA
+  run_title: NA
+  run_notes: NA
+  filter_group: NA
+  filter_reference_grp1: NA
+  filter_reference_grp2: NA
+  filter_reference_grp3: NA
+  group: NA
+  reference_grp1: NA
+  reference_grp2: NA
+  assessments: NA
+  nom: NA
+  nom_cutoff: NA
+  mean_cutoff: NA
+  baseline_id_var: NA
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Params test.
+
+```{r}
+print(params)
+```

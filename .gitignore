@@ -1,3 +1,5 @@
 rsconnect/
 .RRroj
-.
+*.html
+*.pdf
+*.docx

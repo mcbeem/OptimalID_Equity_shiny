@@ -22,6 +22,8 @@ library(readxl)
 #library(reactable)
 
 
+
+
 # define functions --------------------------------------------------------
 
 # define negation of %in%
@@ -828,12 +830,45 @@ ui <- fluidPage(
        )
     ),
   
+  tabPanel("Download",
+           
+           HTML("<br>"),
+           
+           helpText("Download a report of this analysis"),
+           
+           textInput(
+             inputId="run_title",
+             label="Enter a title for the report",
+             placeholder="Enter text here"
+           ),
+           
+           textInput(
+             inputId="run_notes",
+             label="(Optional) enter notes for the report here. (For example, a descripotion of the 
+               analysis)",
+             placeholder="Enter text here"
+           ),
+           
+           
+           radioButtons(
+              inputId="reportFormat",
+              label="Report format",
+              choices=list("html", "pdf", "docx"),
+              inline=TRUE
+           ),
+
+          downloadButton("report", "Generate report")
+        
+  ),
+  
   tabPanel("Info on metrics",
            
            HTML("<br>"),
            HTML("<br>"),
            htmltools::includeMarkdown("metrics.md")
-  ),
+    ),
+  
+
   ) # closes tabsetPanel
 ) # closes fluidPage
 
@@ -1204,6 +1239,50 @@ server <- function(input, output, session) {
     
     
   }) # closes observe
+  
+
+# generate report ---------------------------------------------------------
+  output$report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    #filename = "report.pdf",
+    filename = function(){paste0("report.", input$reportFormat)},
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      print(paste0("report.", input$reportFormat))
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(
+        run_title=input$run_title,
+        run_notes=input$run_notes,
+        file=input$file,
+        filter_group=input$filter_group,
+        filter_reference_grp1=input$filter_reference_grp1,
+        filter_reference_grp2=input$filter_reference_grp2,
+        filter_reference_grp3=input$filter_reference_grp3,
+        group=input$group,
+        reference_grp1=input$reference_grp1,
+        reference_grp2=input$reference_grp2,
+        assessments=input$assessments,
+        nom=input$nom,
+        nom_cutoff=input$nom_cutoff,
+        mean_cutoff=input$mean_cutoff,
+        baseline_id_var=input$baseline_id_var)
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+
 } # closes server
 
 # Run the application 
