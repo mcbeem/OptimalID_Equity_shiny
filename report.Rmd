@@ -1,14 +1,21 @@
 ---
-title: "Optimal ID report"
-date: '2022-04-07'
+title: "Optimal ID equity analysis report"
+date: "`r paste('Generated on ', format(Sys.time(), '%d %B, %Y'))`"
+
+header-includes:
+    - \usepackage{caption}
+
 params:
+  data: NA
   file: NA
   run_title: NA
   run_notes: NA
   filter_group: NA
-  filter_reference_grp1: NA
-  filter_reference_grp2: NA
-  filter_reference_grp3: NA
+  data_filter_string: NA
+  group_filter_string: NA
+  filter_ref_grp1: NA
+  filter_ref_grp2: NA
+  filter_ref_grp3: NA
   group: NA
   reference_grp1: NA
   reference_grp2: NA
@@ -17,15 +24,173 @@ params:
   nom_cutoff: NA
   mean_cutoff: NA
   baseline_id_var: NA
+  equity_tbl: NA
+  group_stats_tbl: NA
 
 ---
 
+---
+title: `r ifelse(params$run_title != '', params$run_title, 'Optimal ID equity analysis report')`
+---
+
+
+
+\captionsetup[table]{labelformat=empty}
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
+set_flextable_defaults(fonts_ignore=TRUE)
+
 ```
 
-Params test.
+```{r, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(data.table)
+library(kableExtra)
+library(flextable)
+```
+
+This report was created using the [Optimal ID equity explorer app](https://mmcbee.shinyapps.io/OptimalID_Equity_shiny/)
+
+
+
+
+`r ifelse(params$run_notes != '', paste("**Notes**:", params$run_notes), '')`
+
 
 ```{r}
-print(params)
+# construct filtering and group selection strings
+if (!is.null(params$filter_group)) {
+
+      data_filter_string = paste0(params$filter_group[1], " == (",
+                                  toString(params$filter_ref_grp1), ")")
+
+
+      if (length(params$filter_group) >= 2) {
+
+        data_filter_string = paste0(data_filter_string, " & ",
+                                      params$filter_group[2], " == (",
+                                      toString(params$filter_ref_grp2), ")")
+        }
+
+      if (length(params$filter_group) >= 3) {
+
+        data_filter_string = paste0(data_filter_string, " & ",
+                                      params$filter_group[3], " == (",
+                                      toString(params$filter_ref_grp3), ")")
+        }
+
+    } else if (is.null(params$filter_group)) {
+      data_filter_string = 'No data filtering applied (all rows selected)'
+    }
+
+
+if (!is.null(params$group)) {
+
+      filter_string = paste0(params$group[1], " == (",
+                                  toString(params$reference_grp1), ")")
+
+
+      if (length(params$group) >= 2) {
+
+        filter_string = paste0(filter_string, " & ",
+                                      params$group[2], " == (",
+                                      toString(params$reference_grp2), ")")
+        }
+
+    } else if (is.null(params$group)) {
+      filter_string = 'No equity groups selected'
+    }
+
+
 ```
+
+
+```{r}
+settings_tbl = data.frame(
+  Parameter = c('Uploaded file', 
+                'Data filtering', 
+                'Group(s) selected for equity analysis',
+                'Reference equity group',
+                'Baseline identification indicator variable name',
+                'Nomination (phase-1) assessment',
+                'Nomination (phase-1) percentile cutoff',
+                'Phase-2 assessments',
+                'Phase-2 percentile cutoff'),
+  Setting = c(params$file, 
+              toString(data_filter_string),
+              toString(params$group),
+              toString(filter_string),
+              params$baseline_id_var,
+              params$nom,
+              round(params$nom_cutoff, 3),
+              toString(params$assessments),
+              round(params$mean_cutoff, 3)
+  ))
+              
+              
+              
+
+settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+  caption = 'Table 1: Settings',
+  autonum = NULL,
+  style = "Table Caption",
+  html_escape = TRUE
+)
+```
+
+```{r, warnings=FALSE}
+params$equity_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+  caption = 'Table 2: Population size and equity metrics',
+  autonum = NULL,
+  style = "Table Caption",
+  html_escape = TRUE
+)
+```
+
+
+
+
+```{r, warnings=FALSE}
+params$group_stats_tbl %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
+  caption = 'Table 3: Assessment descriptive statistics by group',
+  autonum = NULL,
+  style = "Table Caption",
+  html_escape = TRUE
+)
+```
+
+
+
+```{r}
+
+metrics = c("Count", "Representation Index", "Proportion Identified", 
+                        "Relative Risk")
+
+plots = lapply(metrics, equity_plot, data=params$data,
+                    group=params$group,
+                    reference_grp=params$group_filter_string,
+                    assessments=params$assessments,
+                    nom=params$nom,
+                    nom_cutoff=params$nom_cutoff,
+                    mean_cutoff=params$mean_cutoff,
+                    baseline_id_var=params$baseline_id_var)
+
+plots[[1]]
+
+```
+
+```{r}
+plots[[2]]
+```
+
+```{r}
+plots[[3]]
+```
+
+```{r}
+plots[[4]]
+```
+
+
