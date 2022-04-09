@@ -567,5 +567,3 @@ equity_plot = function(data,
   
   return(list(p=p, summary_tbl=summary_tbl))
 }
-
-# test
