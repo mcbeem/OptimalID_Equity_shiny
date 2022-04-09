@@ -654,7 +654,22 @@ server <- function(input, output, session) {
       
       
       if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
-        equity_plot(data=dat(),
+        
+        # we construct 3 pieces of output here: the plot and both tables
+        #  this is needed to prevent users from needing to click on the all
+        #  the tabs prior to downloading the report
+        
+        # construct the descriptive statistics table and load it into
+        #  the appropriate reactive element
+        tables$group_stats <- descr_table(data=dat(),
+                                          group=group,
+                                          vars=unique(c(input$assessments, input$nom)),
+                                          
+        )
+        
+        # 'results' is a list containing both the plot ($p) and the raw equity statistics
+        #   table
+        results = equity_plot(data=dat(),
                     group=input$group,
                     reference_grp=filter_string,
                     assessments=input$assessments,
@@ -663,31 +678,19 @@ server <- function(input, output, session) {
                     mean_cutoff=input$mean_cutoff,
                     baseline_id_var=input$baseline_id_var,
                     plot_metric=input$metric)
-      }
-      
-    }) 
-    
-    output$tbl <- DT::renderDataTable({
-      
-      if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
-        tbl_long = get_equity(data=dat(),
-                     group=group,
-                     reference_grp=filter_string,
-                     assessments=input$assessments,
-                     nom=input$nom,
-                     nom_cutoff=input$nom_cutoff,
-                     test_cutoff=input$mean_cutoff,
-                     baseline_id_var=input$baseline_id_var)
-      
+        
+        # process the equity table - format for display
+        tbl_long = results$summary_tbl
+        
         tbl_long$value = round(tbl_long$value, 3)
         
         tbl_wide = pivot_wider(
-                    dplyr::filter(tbl_long, metric %in% 
-                                  c("count", "pct_identified", "RI", "RR", "CramerV")), 
-                               names_from=c("metric"))
+          dplyr::filter(tbl_long, metric %in% 
+                          c("count", "pct_identified", "RI", "RR", "CramerV")), 
+          names_from=c("metric"))
         
         if (length(group) == 1) {
-        
+          
           tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
                                     tbl_wide$comparison,
                                     decreasing=TRUE, na.last=FALSE),]
@@ -699,23 +702,28 @@ server <- function(input, output, session) {
                                     decreasing=TRUE, na.last=FALSE),]
         }
         
+        # load the table into the reactive object for display and download
         tables$equity_table = dplyr::select(tbl_wide, -baseline)
         
+        # show the plot
+        return(results$p)
+        
       }
+      
+    }) 
+    
+    output$tbl <- DT::renderDataTable({
+      
+        # note: this table is constructed in the render plot call
+        tables$equity_table
         
       }, filter="top")
     
       output$descr_table <- renderDataTable({
         
-        if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
-          
-          tables$group_stats <- descr_table(data=dat(),
-                      group=group,
-                      vars=unique(c(input$assessments, input$nom)),
-                      
-          )
-          
-        }
+        # note: this table is constructed in the render plot call
+        tables$group_stats
+      
     }, filter="top")
     
     
@@ -735,6 +743,7 @@ server <- function(input, output, session) {
       file.copy("report.Rmd", tempReport, overwrite = TRUE)
       
       print(paste0("report.", input$reportFormat))
+      
       
       # Set up parameters to pass to Rmd document
       params <- list(

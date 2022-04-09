@@ -548,14 +548,22 @@ equity_plot = function(data,
     theme(text=element_text(size=16))+
     labs(fill=NULL)
   
-  if (length(group)==1 & terse_metric != 'CramerV') {
-    p = p + facet_wrap(vars(get(group)), scales="free_y")
+  if (length(group)==1) {
+    if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+      p = p + facet_wrap(vars(get(group)))
+    } else if (terse_metric != 'CramerV') {
+      p = p + facet_wrap(vars(get(group)), scales="free_y")
+    }
   }
   
-  if (length(group)==2 & terse_metric != 'CramerV') {
-    p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])), 
-                       scales="free_y")
+  if (length(group)==2) {
+    if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+      p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])))
+    } else if (terse_metric != 'CramerV') {
+      p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])), 
+                         scales="free_y")
+    }
   }
   
-  return(p)
+  return(list(p=p, summary_tbl=summary_tbl))
 }

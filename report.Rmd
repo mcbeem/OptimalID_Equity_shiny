@@ -172,20 +172,20 @@ plots = lapply(metrics, equity_plot, data=params$data,
                     mean_cutoff=params$mean_cutoff,
                     baseline_id_var=params$baseline_id_var)
 
-plots[[1]]
+plots[[1]]$p
 
 ```
 
 ```{r}
-plots[[2]]
+plots[[2]]$p
 ```
 
 ```{r}
-plots[[3]]
+plots[[3]]$p
 ```
 
 ```{r}
-plots[[4]]
+plots[[4]]$p
 ```
 
 
