@@ -29,19 +29,12 @@ params:
 
 ---
 
----
-title: `r ifelse(params$run_title != '', params$run_title, 'Optimal ID equity analysis report')`
----
+
 
 
 
 \captionsetup[table]{labelformat=empty}
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
-set_flextable_defaults(fonts_ignore=TRUE)
-
-```
 
 ```{r, include=FALSE}
 library(dplyr)
@@ -49,6 +42,13 @@ library(ggplot2)
 library(data.table)
 library(kableExtra)
 library(flextable)
+library(knitr)
+library(rmarkdown)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
+set_flextable_defaults(fonts_ignore=TRUE)
 ```
 
 This report was created using the [Optimal ID equity explorer app](https://mmcbee.shinyapps.io/OptimalID_Equity_shiny/)

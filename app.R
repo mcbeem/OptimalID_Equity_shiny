@@ -114,11 +114,12 @@ ui <- fluidPage(
           
           HTML("<br>"),
           
-          selectInput(
+          selectizeInput(
             inputId = "filter_group", 
             label = "Filtering variable(s)", 
             multiple = TRUE,
-            choices = NULL
+            choices = NULL,
+            options=list(maxItems=3)
           ),
           
           conditionalPanel(
@@ -173,11 +174,12 @@ ui <- fluidPage(
         sidebarLayout(
           sidebarPanel(
             
-            selectInput(
+            selectizeInput(
               inputId = "group", 
               label = "Group(s) for equity analysis", 
               multiple = TRUE,
-              choices = NULL
+              choices = NULL,
+              options=list(maxItems=2)
               ),
     
             conditionalPanel(
@@ -280,8 +282,10 @@ ui <- fluidPage(
              placeholder="Enter text here"
            ),
            
-           textInput(
+           textAreaInput(
              inputId="run_notes",
+             width='150%',
+             height='400%',
              label="(Optional) enter notes for the report here. (For example, a descripotion of the 
                analysis)",
              placeholder="Enter text here"
@@ -331,9 +335,9 @@ server <- function(input, output, session) {
     data_filter_string=NULL,
     group_filter_string=NULL,
     filter_group=NULL,
-    filter_reference_grp1=NULL,
-    filter_reference_grp2=NULL,
-    filter_reference_grp3=NULL,
+    filter_ref_grp1=NULL,
+    filter_ref_grp2=NULL,
+    filter_ref_grp3=NULL,
   )
   
   tables <- reactiveValues(
@@ -455,9 +459,16 @@ server <- function(input, output, session) {
     #  are applied)
     filters$data_filter_string <- data_filter_string
     filters$filter_group = filter_group
-    filters$filter_ref_grp1 = filter_ref_group1
-    filters$filter_ref_grp2 = filter_ref_group2
-    filters$filter_ref_grp3 = filter_ref_group3
+    
+    if (length(filter_group) > 0) {
+      filters$filter_ref_grp1 = filter_ref_group1 
+    }
+    if (length(filter_group) > 1) {
+      filters$filter_ref_grp2 = filter_ref_group2
+    }
+    if (length(filter_group) > 2) {
+      filters$filter_ref_grp3 = filter_ref_group3
+    }
     
     
   })
