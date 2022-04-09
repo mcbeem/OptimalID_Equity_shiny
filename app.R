@@ -276,19 +276,12 @@ ui <- fluidPage(
            
            helpText("Download a report of this analysis"),
            
-           textInput(
-             inputId="run_title",
-             label="Enter a title for the report",
-             placeholder="Enter text here"
-           ),
-           
            textAreaInput(
              inputId="run_notes",
-             width='150%',
+             width='75%',
              height='400%',
-             label="(Optional) enter notes for the report here. (For example, a descripotion of the 
-               analysis)",
-             placeholder="Enter text here"
+             label="Notes to include in the report",
+             placeholder="Enter optional text here"
            ),
            
            
@@ -366,6 +359,9 @@ server <- function(input, output, session) {
       mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
     }
     
+    # append the 'overall' column
+    mydata$overall = 1
+    
     output$dat <- DT::renderDT(
       mydata 
     )
@@ -392,6 +388,9 @@ server <- function(input, output, session) {
     } else if (input$fileType == 'excel') {
       mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
     }
+    
+    # append the 'overall' column
+    mydata$overall = 1
     
     filter_group = input$filter_group
     
@@ -740,7 +739,6 @@ server <- function(input, output, session) {
       # Set up parameters to pass to Rmd document
       params <- list(
         data = dat(),
-        run_title=input$run_title,
         run_notes=input$run_notes,
         file=upload_dataname$filename,
         data_filter_string=filters$data_filter_string,

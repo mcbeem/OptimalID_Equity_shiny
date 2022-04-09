@@ -1,6 +1,5 @@
 ---
 title: "Optimal ID equity analysis report"
-date: "`r paste('Generated on ', format(Sys.time(), '%d %B, %Y'))`"
 
 header-includes:
     - \usepackage{caption}
@@ -8,7 +7,6 @@ header-includes:
 params:
   data: NA
   file: NA
-  run_title: NA
   run_notes: NA
   filter_group: NA
   data_filter_string: NA
@@ -30,9 +28,6 @@ params:
 ---
 
 
-
-
-
 \captionsetup[table]{labelformat=empty}
 
 
@@ -51,7 +46,7 @@ knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
 set_flextable_defaults(fonts_ignore=TRUE)
 ```
 
-This report was created using the [Optimal ID equity explorer app](https://mmcbee.shinyapps.io/OptimalID_Equity_shiny/)
+This report was created using the [Optimal ID equity explorer app](https://mmcbee.shinyapps.io/OptimalID_Equity_shiny/). It was generated on `r format(Sys.time(), '%d %B %Y')` at `r format(Sys.time(), '%H:%M')`.
 
 
 
