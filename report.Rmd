@@ -1,6 +1,5 @@
 ---
 title: "Optimal ID equity analysis report"
-date: "`r paste('Generated on ', format(Sys.time(), '%d %B, %Y'))`"
 
 header-includes:
     - \usepackage{caption}
@@ -8,7 +7,6 @@ header-includes:
 params:
   data: NA
   file: NA
-  run_title: NA
   run_notes: NA
   filter_group: NA
   data_filter_string: NA
@@ -29,19 +27,9 @@ params:
 
 ---
 
----
-title: `r ifelse(params$run_title != '', params$run_title, 'Optimal ID equity analysis report')`
----
-
-
 
 \captionsetup[table]{labelformat=empty}
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
-set_flextable_defaults(fonts_ignore=TRUE)
-
-```
 
 ```{r, include=FALSE}
 library(dplyr)
@@ -49,9 +37,16 @@ library(ggplot2)
 library(data.table)
 library(kableExtra)
 library(flextable)
+library(knitr)
+library(rmarkdown)
 ```
 
-This report was created using the [Optimal ID equity explorer app](https://mmcbee.shinyapps.io/OptimalID_Equity_shiny/)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
+set_flextable_defaults(fonts_ignore=TRUE)
+```
+
+This report was created using the [Optimal ID equity explorer app](https://mmcbee.shinyapps.io/OptimalID_Equity_shiny/). It was generated on `r format(Sys.time(), '%d %B %Y')` at `r format(Sys.time(), '%H:%M')`.
 
 
 
@@ -177,20 +172,20 @@ plots = lapply(metrics, equity_plot, data=params$data,
                     mean_cutoff=params$mean_cutoff,
                     baseline_id_var=params$baseline_id_var)
 
-plots[[1]]
+plots[[1]]$p
 
 ```
 
 ```{r}
-plots[[2]]
+plots[[2]]$p
 ```
 
 ```{r}
-plots[[3]]
+plots[[3]]$p
 ```
 
 ```{r}
-plots[[4]]
+plots[[4]]$p
 ```
 
 
