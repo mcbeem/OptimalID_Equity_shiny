@@ -44,7 +44,8 @@ library(officer)
 ```
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, 
+knitr::opts_chunk$set(warning=FALSE,
+                      echo = FALSE, 
                       fig.width=11, 
                       fig.height=8, 
                       dpi=150, 
@@ -145,7 +146,8 @@ settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
   autonum = run_autonum(),
   style = "paragraph",
   html_escape = TRUE
-)
+) %>% fit_to_width(7)
+
 ```
 
 <br>
@@ -157,18 +159,18 @@ params$equity_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_captio
   autonum = NULL,
   style = "Table Caption",
   html_escape = TRUE
-)
+) %>% fit_to_width(7)
 ```
 
 <br>
 
-```{r, warnings=FALSE}
+```{r}
 params$group_stats_tbl %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
   caption = 'Table 3: Assessment descriptive statistics by group',
   autonum = NULL,
   style = "Table Caption",
   html_escape = TRUE
-)
+) %>% fit_to_width(7)
 ```
 
 <!-- -->
