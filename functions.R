@@ -17,7 +17,7 @@
 #'
 #' @return a data frame
 #' 
-descr_table = function(data, vars, group=NA, digits=2, 
+descr_table = function(data, vars, group=NA, digits=2, reference_grp=NA,
                        missing_char="") {
   
   # define helper functions with desirable default NA behavior and formatted output
@@ -34,7 +34,7 @@ descr_table = function(data, vars, group=NA, digits=2,
     dt_group = c(group, "variable")
     
     dtable = data.table::melt(
-      data.table::setDT(
+      data.table::as.data.table(
         data %>% dplyr::select(!!!all_vars)),
       id=group)[, .(mean = Mean(value),
                     sd = Sd(value),
@@ -82,6 +82,33 @@ descr_table = function(data, vars, group=NA, digits=2,
   # replace any NAs, NaN, -Inf,  with missing_Char
   dtable[sapply(dtable, function(x) {x %in% c("Inf", "-Inf", "NA", "NaN")})] = missing_char
   
+  if (!is.na(reference_grp)) {
+    
+    # select the row and relevant columns for the reference group 
+    reference_stats = dtable %>% filter(eval(parse(text=reference_grp))) %>% 
+                        dplyr::select('Variable', 'Mean', 'Std Dev', 'Valid n')
+    
+    # rename for merge
+    reference_stats = reference_stats %>% dplyr::rename(ref_Mean=Mean, ref_SD=`Std Dev`, ref_n = `Valid n`)
+     
+    # merge the columns containing the reference stats onto the table
+    dtable = merge(dtable, reference_stats, by=c("Variable"))
+    
+    # calculate pooled standard deviation
+    dtable = dtable %>% dplyr::mutate(SDpooled = sqrt((((as.numeric(`Valid n`)-1)*as.numeric(`Std Dev`)^2)  +
+                                                ((as.numeric(ref_n)-1)*as.numeric(ref_SD)^2)) / 
+                                               (as.numeric(`Valid n`) + as.numeric(ref_n) - 2)) )
+    
+    # calculate Cohen's D
+    dtable = dtable %>% dplyr::mutate(`Cohen D` = (as.numeric(Mean) - 
+                                                     as.numeric(ref_Mean)) / SDpooled)
+    
+    # format Cohen's D for nice printing
+    dtable = dtable %>% dplyr::mutate(`Cohen D` = formatC(`Cohen D`, digits=digits, format="f"))
+    
+    # drop calculation columns
+    dtable = dtable %>% dplyr::select(-c(ref_Mean, ref_SD, ref_n, SDpooled))
+  }
   
   return(dtable)
 }
@@ -97,7 +124,6 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   }
   
   # calculate nomination cutoff at empirical percentile
-  #nom_cutoff_val = quantile(data[nom], nom_cutoff, type=3, na.rm=TRUE)
   nom_cutoff_val = qnorm(nom_cutoff)
   
   
@@ -113,7 +139,9 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   meanscore <- as.matrix(data[, assessments]) %*% w
   
   # normalize the mean so it has an SD of 1
-  meanscore <- meanscore / sd(meanscore, na.rm=TRUE)
+  if (length(assessments) > 1) {
+    meanscore <- meanscore / sd(meanscore, na.rm=TRUE)
+  }
   
   # calculate test cutoff at empirical percntile
   #test_cutoff_val = quantile(meanscore, test_cutoff, type=3, na.rm=TRUE)
@@ -510,7 +538,8 @@ equity_plot = function(data,
                        nom_cutoff,
                        mean_cutoff,
                        baseline_id_var,
-                       plot_metric)  {
+                       plot_metric,
+                       weights=NA)  {
   
   summary_tbl = get_equity(data=data,
                            group=group,
@@ -519,7 +548,8 @@ equity_plot = function(data,
                            nom=nom,
                            nom_cutoff=nom_cutoff,
                            test_cutoff=mean_cutoff,
-                           baseline_id_var=baseline_id_var)
+                           baseline_id_var=baseline_id_var,
+                           weights=weights)
   
   # this line filters out any row from the summary table with an NA for any
   #  of the columns in 'group' -- except for the rows for Cramer's V
