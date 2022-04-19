@@ -45,11 +45,27 @@ ui <- fluidPage(
     ")
     )),
     
-    # Application title
+    # Removes spin wheels from inputs
+    tags$style(HTML("
+        input[type=number] {
+              -moz-appearance:textfield;
+        }
+        input[type=number]::{
+              -moz-appearance:textfield;
+        }
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+        }
+    ")),
+    
+    
     headerPanel("Optimal ID equity explorer"),
     
     tabsetPanel(
-
+      
+# About tab ---------------------------------------------------------------
       tabPanel("About",
                
                HTML("<br>"),
@@ -57,6 +73,8 @@ ui <- fluidPage(
                htmltools::includeMarkdown("helpText.md")
         ),
       
+
+# Data tab ----------------------------------------------------------------
       tabPanel("Data",
         shinyjs::useShinyjs(),
         
@@ -168,8 +186,9 @@ ui <- fluidPage(
         ) # closes sidebarPalen
         
       ), # closes tabpanel 'data'
-      
-      tabPanel("Plot",
+
+# Plot panel --------------------------------------------------------------
+      tabPanel("Setup and Plot",
         
         sidebarLayout(
           sidebarPanel(
@@ -200,13 +219,112 @@ ui <- fluidPage(
               )
             ),
             
-            
-            selectInput(
+            selectizeInput(
               inputId = "assessments", 
               label = "Assessments", 
               multiple = TRUE,
-              choices = NULL
+              choices = NULL,
+              options=list(maxItems=6)
               ),
+            
+            checkboxInput(
+              inputId = "adj_weights",
+              label = "Adjust weights?",
+            ),
+            
+            conditionalPanel(
+              condition = "input.adj_weights && input.assessments.length >= 1",
+              
+              helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
+              
+              div(
+                numericInput(
+                  inputId = "weight1",
+                  label = "Weight for first assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
+            ),
+            
+            conditionalPanel(
+              condition = "input.adj_weights && input.assessments.length >= 2",
+              
+              div(
+                numericInput(
+                  inputId = "weight2",
+                  label = "Weight for second assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+              style='font-size:80%')
+            ),
+
+            
+            conditionalPanel(
+              condition = "input.adj_weights && input.assessments.length >= 3",
+              
+              div(
+                numericInput(
+                  inputId = "weight3",
+                  label = "Weight for third assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
+              ),
+            
+            conditionalPanel(
+              condition = "input.adj_weights && input.assessments.length >= 4",
+              
+              div(
+                numericInput(
+                  inputId = "weight4",
+                  label = "Weight for fourth assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
+            ),
+            
+            conditionalPanel(
+              condition = "input.adj_weights && input.assessments.length >= 5",
+              
+              div(
+                numericInput(
+                  inputId = "weight5",
+                  label = "Weight for fifth assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+              style='font-size:80%')
+            ),
+            
+            conditionalPanel(
+              condition = "input.adj_weights && input.assessments.length >= 6",
+              
+              div(
+                numericInput(
+                  inputId = "weight6",
+                  label = "Weight for sixth assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
+            ),
+            
             
             selectInput(
               inputId = "nom", 
@@ -237,6 +355,7 @@ ui <- fluidPage(
               value = .9,
               step=.001
               ),
+            
       
           ), # closes sidebarPanel
   
@@ -257,19 +376,22 @@ ui <- fluidPage(
         )
       ) # closes sidebarLayout
     ), # closes tabPanel 'Plot'
-    
+
+# Equity table panel ------------------------------------------------------
   tabPanel("Equity table",
         fluidPage(
            DTOutput('tbl')
         )
     ),
-  
+
+# Group statistics panel --------------------------------------------------
   tabPanel("Group statistics",
        fluidPage(
          DTOutput('descr_table')
        )
     ),
-  
+
+# Download panel ----------------------------------------------------------
   tabPanel("Download",
            
            HTML("<br>"),
@@ -295,7 +417,8 @@ ui <- fluidPage(
           downloadButton("report", "Generate report")
         
   ),
-  
+
+# Info on metrics panel ---------------------------------------------------
   tabPanel("Info on metrics",
            
            HTML("<br>"),
@@ -324,6 +447,7 @@ server <- function(input, output, session) {
   # initialize the 'dat' reactive object
   dat <- reactiveVal()
   
+  # initialize the 'filters' reactive object
   filters <- reactiveValues(
     data_filter_string=NULL,
     group_filter_string=NULL,
@@ -333,11 +457,18 @@ server <- function(input, output, session) {
     filter_ref_grp3=NULL,
   )
   
+  # initialize the 'tables' reactive object
   tables <- reactiveValues(
     equity_table=NULL,
     group_stats=NULL,
   )
   
+  # initialize the 'weights' reactive object
+  weights <- reactiveValues(
+    w=rep(1, times=6)
+  )
+  
+  # initialize the 'upload_dataname' reactive object
   upload_dataname <- reactiveValues(
     filename=NULL
   )
@@ -362,6 +493,7 @@ server <- function(input, output, session) {
     # append the 'overall' column
     mydata$overall = 1
     
+    # preview the loaded data
     output$dat <- DT::renderDT(
       mydata 
     )
@@ -369,6 +501,7 @@ server <- function(input, output, session) {
     # store the loaded data in the reactive object
     dat(mydata)
     
+    # add the datafile name to the reactive object (for display in the downloaded report)
     upload_dataname$filename = basename(infile$name)
     
     })
@@ -478,6 +611,12 @@ server <- function(input, output, session) {
       variable_names <- names(dat()) 
     })
     
+    # update the weights reactive object
+    observe({
+      weights$w=c(input$weight1, input$weight2, input$weight3, 
+                  input$weight4, input$weight5, input$weight6)
+    })
+    
     
     # updateSelectInput updates the choices in a SelectInput interface object...
     observe({
@@ -510,6 +649,8 @@ server <- function(input, output, session) {
             inputId = "reference_grp1", 
             choices = group1_levels()
           )
+          
+          
         }
       }
       
@@ -659,11 +800,25 @@ server <- function(input, output, session) {
         #  this is needed to prevent users from needing to click on the all
         #  the tabs prior to downloading the report
         
+        # get the data out of the reactive object
+        mydata = dat()
+        
+        # assign a new variable in the local environment only!
+        #  (we don't want meanscore to appear as a variable for selection)
+        mydata$meanscore = identify_opti(data=mydata, 
+                                        assessments=input$assessments, 
+                                        nom=input$nom, 
+                                        nom_cutoff=input$nom_cutoff, 
+                                        test_cutoff=input$mean_cutoff,
+                                        mode = "meanscores", 
+                                        weights = weights$w[1:length(input$assessments)])
+        
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
-        tables$group_stats <- descr_table(data=dat(),
+        tables$group_stats <- descr_table(data=mydata,
                                           group=group,
-                                          vars=unique(c(input$assessments, input$nom)),
+                                          reference_grp=filter_string,
+                                          vars=unique(c("meanscore", input$assessments, input$nom)),
                                           
         )
         
@@ -677,8 +832,9 @@ server <- function(input, output, session) {
                     nom_cutoff=input$nom_cutoff,
                     mean_cutoff=input$mean_cutoff,
                     baseline_id_var=input$baseline_id_var,
-                    plot_metric=input$metric)
-        
+                    plot_metric=input$metric,
+                    weights=weights$w[1:length(input$assessments)])
+      
         # process the equity table - format for display
         tbl_long = results$summary_tbl
         
@@ -760,6 +916,7 @@ server <- function(input, output, session) {
         reference_grp2=input$reference_grp2,
         group_filter_string=filters$group_filter_string,
         assessments=input$assessments,
+        weights=weights$w[1: length(input$assessments)],
         nom=input$nom,
         nom_cutoff=input$nom_cutoff,
         mean_cutoff=input$mean_cutoff,
