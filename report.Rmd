@@ -18,6 +18,7 @@ params:
   reference_grp1: NA
   reference_grp2: NA
   assessments: NA
+  weights: NA
   nom: NA
   nom_cutoff: NA
   mean_cutoff: NA
@@ -39,10 +40,20 @@ library(kableExtra)
 library(flextable)
 library(knitr)
 library(rmarkdown)
+library(officer)
 ```
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.width=11, fig.height=8, dpi=150)
+knitr::opts_chunk$set(echo = FALSE, 
+                      fig.width=11, 
+                      fig.height=8, 
+                      dpi=150, 
+                      ft.align = "left",
+                      tab.cap.pre=' ', 
+                      tab.cap.sep='',
+                      tab.cap='',
+                      tab.cap.tnd="")
+
 set_flextable_defaults(fonts_ignore=TRUE)
 ```
 
@@ -112,6 +123,7 @@ settings_tbl = data.frame(
                 'Nomination (phase-1) assessment',
                 'Nomination (phase-1) percentile cutoff',
                 'Phase-2 assessments',
+                'Phase-2 assessment weights',
                 'Phase-2 percentile cutoff'),
   Setting = c(params$file, 
               toString(data_filter_string),
@@ -119,8 +131,9 @@ settings_tbl = data.frame(
               toString(filter_string),
               params$baseline_id_var,
               params$nom,
-              round(params$nom_cutoff, 3),
+              toString(round(params$nom_cutoff, 3)),
               toString(params$assessments),
+              toString(paste0(round(params$weights, 3))),
               round(params$mean_cutoff, 3)
   ))
               
@@ -129,11 +142,14 @@ settings_tbl = data.frame(
 
 settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
   caption = 'Table 1: Settings',
-  autonum = NULL,
-  style = "Table Caption",
+  autonum = run_autonum(),
+  style = "paragraph",
   html_escape = TRUE
 )
 ```
+
+<br>
+
 
 ```{r, warnings=FALSE}
 params$equity_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
@@ -144,8 +160,7 @@ params$equity_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_captio
 )
 ```
 
-
-
+<br>
 
 ```{r, warnings=FALSE}
 params$group_stats_tbl %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
@@ -156,6 +171,7 @@ params$group_stats_tbl %>% regulartable() %>% autofit() %>% theme_zebra() %>% se
 )
 ```
 
+<!-- -->
 
 
 ```{r}
@@ -176,13 +192,19 @@ plots[[1]]$p
 
 ```
 
+<br>
+
 ```{r}
 plots[[2]]$p
 ```
 
+<br>
+
 ```{r}
 plots[[3]]$p
 ```
+
+<br>
 
 ```{r}
 plots[[4]]$p
