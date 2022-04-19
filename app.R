@@ -173,7 +173,7 @@ ui <- fluidPage(
       ), # closes tabpanel 'data'
 
 # Plot panel --------------------------------------------------------------
-      tabPanel("Plot",
+      tabPanel("Setup and Plot",
         
         sidebarLayout(
           sidebarPanel(
@@ -204,12 +204,12 @@ ui <- fluidPage(
               )
             ),
             
-            
-            selectInput(
+            selectizeInput(
               inputId = "assessments", 
               label = "Assessments", 
               multiple = TRUE,
-              choices = NULL
+              choices = NULL,
+              options=list(maxItems=6)
               ),
             
             checkboxInput(
@@ -220,73 +220,92 @@ ui <- fluidPage(
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 1",
               
-              numericInput(
-                inputId = "weight1",
-                label = "Weight for first assessment",
-                value = 1,
-                min = 0,
-                max = 10,
-                step = .1)
+              div(
+                numericInput(
+                  inputId = "weight1",
+                  label = "Weight for first assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
             ),
             
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 2",
               
-              numericInput(
-                inputId = "weight2",
-                label = "Weight for second assessment",
-                value = 1,
-                min = 0,
-                max = 10,
-                step = .1)
+              div(
+                numericInput(
+                  inputId = "weight2",
+                  label = "Weight for second assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+              style='font-size:80%')
             ),
+
             
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 3",
               
-              numericInput(
-                inputId = "weight3",
-                label = "Weight for third assessment",
-                value = 1,
-                min = 0,
-                max = 10,
-                step = .1)
-            ),
+              div(
+                numericInput(
+                  inputId = "weight3",
+                  label = "Weight for third assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
+              ),
             
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 4",
               
-              numericInput(
-                inputId = "weight4",
-                label = "Weight for fourth assessment",
-                value = 1,
-                min = 0,
-                max = 10,
-                step = .1)
+              div(
+                numericInput(
+                  inputId = "weight4",
+                  label = "Weight for fourth assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
             ),
             
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 5",
               
-              numericInput(
-                inputId = "weight5",
-                label = "Weight for fifth assessment",
-                value = 1,
-                min = 0,
-                max = 10,
-                step = .1)
+              div(
+                numericInput(
+                  inputId = "weight5",
+                  label = "Weight for fifth assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+              style='font-size:80%')
             ),
             
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 6",
               
-              numericInput(
-                inputId = "weight6",
-                label = "Weight for sixth assessment",
-                value = 1,
-                min = 0,
-                max = 10,
-                step = .1)
+              div(
+                numericInput(
+                  inputId = "weight6",
+                  label = "Weight for sixth assessment",
+                  value = 1,
+                  min = 0,
+                  max = 10,
+                  step = .1,
+                  width = '90%'),
+                style='font-size:80%')
             ),
             
             
