@@ -10,6 +10,7 @@
 library(shiny)
 library(shinyjs)
 library(shinythemes)
+library(shinybusy)
 library(htmltools)
 library(here)
 library(ggplot2)
@@ -20,6 +21,7 @@ library(DT)
 library(DescTools)
 library(readxl)
 library(markdown)
+
 #library(reactable)
 
 
@@ -44,6 +46,7 @@ ui <- fluidPage(
       }
     ")
     )),
+  
     
     # Removes spin wheels from inputs
     tags$style(HTML("
@@ -59,6 +62,10 @@ ui <- fluidPage(
               margin: 0;
         }
     ")),
+    
+    # define the busy spinner for downloading the report
+    use_busy_spinner(spin = "folding-cube", position="full-page",
+                     height="75px", width="75px"),
     
     
     headerPanel("Optimal ID equity explorer"),
@@ -435,6 +442,7 @@ ui <- fluidPage(
 # server ------------------------------------------------------------------
 server <- function(input, output, session) {
   
+
   # initialize the app with a disabled load file action button
   shinyjs::disable('loadFile')
   
@@ -927,10 +935,15 @@ server <- function(input, output, session) {
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
+      
+      show_spinner()
+      
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
-                        envir = new.env(parent = globalenv())
-      )
+                        envir = new.env(parent = globalenv()) 
+      ) 
+      
+      hide_spinner()
     }
   )
 
