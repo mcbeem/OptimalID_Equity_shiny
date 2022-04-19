@@ -45,6 +45,21 @@ ui <- fluidPage(
     ")
     )),
     
+    # Removes spin wheels from inputs
+    tags$style(HTML("
+        input[type=number] {
+              -moz-appearance:textfield;
+        }
+        input[type=number]::{
+              -moz-appearance:textfield;
+        }
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+              -webkit-appearance: none;
+              margin: 0;
+        }
+    ")),
+    
     
     headerPanel("Optimal ID equity explorer"),
     
@@ -219,6 +234,8 @@ ui <- fluidPage(
             
             conditionalPanel(
               condition = "input.adj_weights && input.assessments.length >= 1",
+              
+              helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
               
               div(
                 numericInput(
@@ -446,10 +463,12 @@ server <- function(input, output, session) {
     group_stats=NULL,
   )
   
+  # initialize the 'weights' reactive object
   weights <- reactiveValues(
     w=rep(1, times=6)
   )
   
+  # initialize the 'upload_dataname' reactive object
   upload_dataname <- reactiveValues(
     filename=NULL
   )
@@ -474,6 +493,7 @@ server <- function(input, output, session) {
     # append the 'overall' column
     mydata$overall = 1
     
+    # preview the loaded data
     output$dat <- DT::renderDT(
       mydata 
     )
@@ -481,6 +501,7 @@ server <- function(input, output, session) {
     # store the loaded data in the reactive object
     dat(mydata)
     
+    # add the datafile name to the reactive object (for display in the downloaded report)
     upload_dataname$filename = basename(infile$name)
     
     })
@@ -813,11 +834,7 @@ server <- function(input, output, session) {
                     baseline_id_var=input$baseline_id_var,
                     plot_metric=input$metric,
                     weights=weights$w[1:length(input$assessments)])
-        
-        print(weights$w)
-        print(input$weight)
-        
-        
+      
         # process the equity table - format for display
         tbl_long = results$summary_tbl
         
