@@ -63,8 +63,9 @@ ui <- fluidPage(
         }
     ")),
     
-    add_busy_spinner(spin = "folding-cube", position="full-page", onstart=FALSE,
-                     height="75px", width="75px", timeout=400),
+    # define the busy spinner for downloading the report
+    use_busy_spinner(spin = "folding-cube", position="full-page",
+                     height="75px", width="75px"),
     
     
     headerPanel("Optimal ID equity explorer"),
@@ -441,6 +442,7 @@ ui <- fluidPage(
 # server ------------------------------------------------------------------
 server <- function(input, output, session) {
   
+
   # initialize the app with a disabled load file action button
   shinyjs::disable('loadFile')
   
@@ -933,10 +935,15 @@ server <- function(input, output, session) {
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
+      
+      show_spinner()
+      
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = new.env(parent = globalenv()) 
       ) 
+      
+      hide_spinner()
     }
   )
 
