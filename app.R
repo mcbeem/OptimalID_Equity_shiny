@@ -10,6 +10,7 @@
 library(shiny)
 library(shinyjs)
 library(shinythemes)
+library(shinybusy)
 library(htmltools)
 library(here)
 library(ggplot2)
@@ -20,6 +21,7 @@ library(DT)
 library(DescTools)
 library(readxl)
 library(markdown)
+
 #library(reactable)
 
 
@@ -44,6 +46,7 @@ ui <- fluidPage(
       }
     ")
     )),
+  
     
     # Removes spin wheels from inputs
     tags$style(HTML("
@@ -59,6 +62,9 @@ ui <- fluidPage(
               margin: 0;
         }
     ")),
+    
+    add_busy_spinner(spin = "folding-cube", position="full-page", onstart=FALSE,
+                     height="75px", width="75px", timeout=400),
     
     
     headerPanel("Optimal ID equity explorer"),
@@ -929,8 +935,8 @@ server <- function(input, output, session) {
       # from the code in this app).
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
-                        envir = new.env(parent = globalenv())
-      )
+                        envir = new.env(parent = globalenv()) 
+      ) 
     }
   )
 
