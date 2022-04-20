@@ -63,11 +63,6 @@ ui <- fluidPage(
         }
     ")),
     
-    # define the busy spinner for downloading the report
-    use_busy_spinner(spin = "folding-cube", position="full-page",
-                     height="75px", width="75px"),
-    
-    
     headerPanel("Optimal ID equity explorer"),
     
     tabsetPanel(
@@ -936,14 +931,16 @@ server <- function(input, output, session) {
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
       
-      show_spinner()
+      # display the busy spinner
+      show_modal_spinner(spin = "folding-cube") 
       
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = new.env(parent = globalenv()) 
       ) 
       
-      hide_spinner()
+      # remove the busy spinner
+      remove_modal_spinner()
     }
   )
 
