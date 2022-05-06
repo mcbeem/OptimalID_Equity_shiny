@@ -832,7 +832,6 @@ server <- function(input, output, session) {
                                         mode = "meanscores", 
                                         weights = weights$w[1:length(input$assessments)])
         
-        print(summary(mydata$meanscore))
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element

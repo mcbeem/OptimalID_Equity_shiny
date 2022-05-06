@@ -138,11 +138,19 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   
   # get a matrix of weights, zeros for missings
   w_mat = (!is.na(as.matrix(data[assessments])) ) * 1 * w
+ 
   w_mat_norm = w_mat / rowSums(w_mat)
+  
+  # which rows are all NA?
+  row_index_allNA = apply(w_mat_norm, 1, function(x) {as.logical(min(is.na(x)))})
   
   # get the means, note that the listwise setting is inverted and applied
   #  as the na.rm argument!
   meanscore = rowSums(w_mat_norm * data[assessments], na.rm=!listwise)
+  
+  # if all the values in the row were NA, its average will be 0 (not NA); this 
+  #  will distort the mean. so we need to set it to NA
+  meanscore[row_index_allNA] = NA
  
   # shrinkage-adjusted cutoff
   if (length(assessments) > 1) {
