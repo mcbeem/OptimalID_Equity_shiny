@@ -10,6 +10,7 @@
 library(shiny)
 library(shinyjs)
 library(shinythemes)
+library(shinybusy)
 library(htmltools)
 library(here)
 library(ggplot2)
@@ -926,11 +927,18 @@ server <- function(input, output, session) {
       
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
-      # from the code in this app).
+      # from the code in this app)
+      
+      # display the busy spinner
+      show_modal_spinner(spin = "folding-cube") 
+     
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = new.env(parent = globalenv())
       )
+      
+      # remove the busy spinner
+      remove_modal_spinner()
     }
   )
 
