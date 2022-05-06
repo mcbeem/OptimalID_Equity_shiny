@@ -228,6 +228,14 @@ ui <- fluidPage(
               options=list(maxItems=6)
               ),
             
+            helpText("(don't turn this off unless you really know what you are doing)"),
+            
+            checkboxInput(
+                inputId = "listwise",
+                label = "Phase-II listwise deletion",
+                value = TRUE
+            ),
+          
             checkboxInput(
               inputId = "adj_weights",
               label = "Adjust weights?",
@@ -469,6 +477,11 @@ server <- function(input, output, session) {
     w=rep(1, times=6)
   )
   
+  # initialize the 'listwise' reactive object
+  listwise <- reactiveValues(
+      listwise=FALSE
+  )
+  
   # initialize the 'upload_dataname' reactive object
   upload_dataname <- reactiveValues(
     filename=NULL
@@ -616,6 +629,10 @@ server <- function(input, output, session) {
     observe({
       weights$w=c(input$weight1, input$weight2, input$weight3, 
                   input$weight4, input$weight5, input$weight6)
+    })
+    
+    observe({
+        listwise$listwise=input$listwise
     })
     
     
@@ -811,8 +828,11 @@ server <- function(input, output, session) {
                                         nom=input$nom, 
                                         nom_cutoff=input$nom_cutoff, 
                                         test_cutoff=input$mean_cutoff,
+                                        listwise=listwise$listwise,
                                         mode = "meanscores", 
                                         weights = weights$w[1:length(input$assessments)])
+        
+        print(summary(mydata$meanscore))
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
@@ -825,10 +845,11 @@ server <- function(input, output, session) {
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
-        results = equity_plot(data=dat(),
+        results = equity_plot(data=mydata, #dat()
                     group=input$group,
                     reference_grp=filter_string,
                     assessments=input$assessments,
+                    listwise=listwise$listwise,
                     nom=input$nom,
                     nom_cutoff=input$nom_cutoff,
                     mean_cutoff=input$mean_cutoff,

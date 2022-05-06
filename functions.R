@@ -115,7 +115,7 @@ descr_table = function(data, vars, group=NA, digits=2, reference_grp=NA,
 
 # define function for assigning gifted status based on optimal id
 identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
-                          mode = "decisions", weights = NA) {
+                          mode = "decisions", listwise=TRUE, weights = NA) {
   
   if (mode %!in% c("decisions", "meanscores")) {
     stop("argument 'mode' must be one of 'decisions' or 'meanscores'")
@@ -134,7 +134,15 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   w <- weights / sum(weights)
   
   # shortcut for calculating mean (as weighted sum)
-  meanscore <- as.matrix(data[, assessments]) %*% w
+  #meanscore <- as.matrix(data[, assessments]) %*% w
+  
+  # get a matrix of weights, zeros for missings
+  w_mat = (!is.na(as.matrix(data[assessments])) ) * 1 * w
+  w_mat_norm = w_mat / rowSums(w_mat)
+  
+  # get the means, note that the listwise setting is inverted and applied
+  #  as the na.rm argument!
+  meanscore = rowSums(w_mat_norm * data[assessments], na.rm=!listwise)
  
   # shrinkage-adjusted cutoff
   if (length(assessments) > 1) {
@@ -464,13 +472,13 @@ equity_table_to_long <- function(eq_tbl, group=NA, total_var, target_vars) {
 
 ### Define master function for calculating equity statistics ###
 
-get_equity <- function(data, group, reference_grp, assessments, nom, nom_cutoff, 
-                       test_cutoff, baseline_id_var, weights = NA) {
+get_equity <- function(data, group, reference_grp, assessments, listwise, nom, 
+                       nom_cutoff, test_cutoff, baseline_id_var, weights = NA) {
   
   # create a designator variable for identification under optimal id
   data$opti_gifted <- identify_opti(
     data = data, assessments = assessments, nom = nom, nom_cutoff = nom_cutoff, 
-    test_cutoff = test_cutoff, mode="decisions", weights=weights)
+    test_cutoff = test_cutoff, listwise=listwise, mode="decisions", weights=weights)
   
   # calculate equity table statistics
   eq_tbl <- equity_table(
@@ -530,6 +538,7 @@ equity_plot = function(data,
                        group,
                        reference_grp,
                        assessments,
+                       listwise,
                        nom,
                        nom_cutoff,
                        mean_cutoff,
@@ -541,6 +550,7 @@ equity_plot = function(data,
                            group=group,
                            reference_grp=reference_grp,
                            assessments=assessments,
+                           listwise=listwise,
                            nom=nom,
                            nom_cutoff=nom_cutoff,
                            test_cutoff=mean_cutoff,
