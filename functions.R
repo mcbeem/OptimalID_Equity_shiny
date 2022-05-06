@@ -147,10 +147,11 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   # shrinkage-adjusted cutoff
   if (length(assessments) > 1) {
       r = cor(data[assessments], use='complete.obs')
-      sd_shrinkage_factor = sqrt(var_mean(r=r, w=w))
-  } else {sd_shrinkage_factor = 0}
+      var_shrinkage_factor = var_mean(r=r, w=w)
+  } else {var_shrinkage_factor = 1}
   
-  test_cutoff_val = qnorm(test_cutoff, 0, sd=sd_shrinkage_factor)
+  test_cutoff_val = qnorm(test_cutoff, 0, 
+                          sd=sqrt(var_shrinkage_factor*var(meanscore, na.rm=TRUE)))
   
   # shrinkage-adjusted cutoff
   opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)
@@ -603,3 +604,5 @@ equity_plot = function(data,
   
   return(list(p=p, summary_tbl=summary_tbl))
 }
+
+#test
