@@ -21,8 +21,7 @@ library(DT)
 library(DescTools)
 library(readxl)
 library(markdown)
-
-#library(reactable)
+library(giftedCalcs)
 
 
 # import functions
@@ -46,7 +45,6 @@ ui <- fluidPage(
       }
     ")
     )),
-  
     
     # Removes spin wheels from inputs
     tags$style(HTML("
@@ -62,6 +60,7 @@ ui <- fluidPage(
               margin: 0;
         }
     ")),
+    
     
     headerPanel("Optimal ID equity explorer"),
     
@@ -437,7 +436,6 @@ ui <- fluidPage(
 # server ------------------------------------------------------------------
 server <- function(input, output, session) {
   
-
   # initialize the app with a disabled load file action button
   shinyjs::disable('loadFile')
   
@@ -929,15 +927,15 @@ server <- function(input, output, session) {
       
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
-      # from the code in this app).
+      # from the code in this app)
       
       # display the busy spinner
       show_modal_spinner(spin = "folding-cube") 
-      
+     
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
-                        envir = new.env(parent = globalenv()) 
-      ) 
+                        envir = new.env(parent = globalenv())
+      )
       
       # remove the busy spinner
       remove_modal_spinner()

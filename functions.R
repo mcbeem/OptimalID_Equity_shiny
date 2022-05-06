@@ -7,9 +7,7 @@
 #'   descriptive statistics tables 
 #'
 #' @param data a data frame
-#' @param rename  a vector of renaming strings of the form: 
-#'   c('new_name_1' = 'old_name_1', 'new_name_2' = 'old_name_2'), which is used both
-#'   for column selection and renaming
+#' @param vars a vector of variable names used for column selection 
 #' @param group a quoted column name identifying a grouping variable for conditional
 #'   descriptive statistics. if NA, marginal statistics are computed. Defaults to NA
 #' @param digits numeric scalar; selects the number of decimal places for printed values
@@ -137,16 +135,14 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   
   # shortcut for calculating mean (as weighted sum)
   meanscore <- as.matrix(data[, assessments]) %*% w
-  
-  # normalize the mean so it has an SD of 1
+ 
+  # shrinkage-adjusted cutoff
   if (length(assessments) > 1) {
-    meanscore <- meanscore / sd(meanscore, na.rm=TRUE)
-  }
+      r = cor(data[assessments], use='complete.obs')
+      sd_shrinkage_factor = sqrt(var_mean(r=r, w=w))
+  } else {sd_shrinkage_factor = 0}
   
-  # calculate test cutoff at empirical percntile
-  #test_cutoff_val = quantile(meanscore, test_cutoff, type=3, na.rm=TRUE)
-  test_cutoff_val = qnorm(test_cutoff)
-  
+  test_cutoff_val = qnorm(test_cutoff, 0, sd=sd_shrinkage_factor)
   
   # shrinkage-adjusted cutoff
   opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)

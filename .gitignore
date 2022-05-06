@@ -1,5 +1,9 @@
 rsconnect/
 .RRroj
+*.Rproj
 *.html
 *.pdf
 *.docx
+.Rproj.user
+
+tmp/
