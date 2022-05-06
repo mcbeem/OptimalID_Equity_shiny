@@ -20,7 +20,7 @@ library(DT)
 library(DescTools)
 library(readxl)
 library(markdown)
-#library(reactable)
+library(giftedCalcs)
 
 
 # import functions
