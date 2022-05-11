@@ -613,4 +613,105 @@ equity_plot = function(data,
   return(list(p=p, summary_tbl=summary_tbl))
 }
 
-#test
+
+get_equity_multi <- function(data, group, reference_grp, pathways, baseline_id_var, opti_prefix="opti") {
+    
+    original_colnames = names(data)
+    
+    # create a designator variable for identification under optimal id
+    
+    for (i in 1:length(pathways)) {
+        
+        # check if there's a name for this list entry, if not assign it a generic label
+        if (is.null(names(pathways)[i])) {
+            pathway_name[i] = paste0("pathway", i)
+        } else {pathway_name[i] = names(pathways)[i]}
+        
+        # check if weights were given for this list entry, 
+        if (is.null(pathways[[i]][['weights']])) {
+            pathways[[i]][['weights']] = NA
+        } 
+        
+        data[paste0(opti_prefix, "_", pathway_name[i])] <- identify_opti(
+            data = data, 
+            assessments = pathways[[i]][['assessments']],
+            nom = pathways[[i]][['nom']],
+            nom_cutoff = pathways[[i]][['nom_cutoff']],
+            test_cutoff = pathways[[i]][['test_cutoff']], 
+            weights=pathways[[i]][['weights']],
+            mode="decisions"
+        )
+    }
+    
+    # get a new column that is the min across the new columns
+    new_colnames = names(data)[names(data) %!in% original_colnames]
+    
+    # get a new column which is TRUE if the student comes in under any path
+    data[paste0(opti_prefix, "_any_pathway")] = as.logical(
+        apply(data[new_colnames], 1, min))
+    
+    # add this new column to the new colnames
+    new_colnames = c(new_colnames, paste0(opti_prefix, "_any_pathway"))
+    
+    # make a list to hold the output
+    output = list()
+    
+    for (i in 1:length(pathways) + 1) {
+        
+        # calculate equity table statistics
+        eq_tbl <- equity_table(
+            data = data, id_var = c(baseline_id_var, new_colnames[i]),
+            group = group
+        )
+        
+        # now calculate all the metrics we want to report
+        t1 <- calc_change(
+            eq_tbl = eq_tbl, group = group, baseline = baseline_id_var,
+            comparison = new_colnames[i]
+        )
+        
+        t2 <- equity_table_to_long(eq_tbl,
+                                   group = group, total_var = "total",
+                                   target_vars = c(baseline_id_var, 
+                                                   new_colnames[i])
+        )
+        
+        t3 <- calc_RI(
+            eq_tbl = eq_tbl, group = group, total_var = "total",
+            target_vars = c(baseline_id_var, new_colnames[i])
+        )
+        
+        t4 <- calc_RI_ratio(
+            eq_tbl = eq_tbl, group = group, total_var = "total",
+            target_vars = c(baseline_id_var, new_colnames[i]),
+            reference_grp = reference_grp
+        )
+        
+        t5 <- calc_comparison_metrics(
+            eq_tbl = eq_tbl, group = group, total_var = "total",
+            target_vars = c(baseline_id_var, new_colnames[i]), 
+            reference_grp = reference_grp
+        ) 
+        
+        t6 <- calc_CramerV(
+            eq_tbl = eq_tbl, group = group, total_var = "total",
+            target_vars = c(baseline_id_var, new_colnames[i])
+        )
+        
+        t7 <- equity_table_to_long(eq_tbl,
+                                   group = NA, total_var = "total",
+                                   target_vars = c(baseline_id_var, new_colnames[i])
+        )
+        
+        # stack sub-results
+        out = bind_rows(t2, t1, t3, t4, t5, t6, t7)
+        
+        # reorder cols
+        output[[new_colnames[i]]] = out[, c(
+            group, "metric", "baseline", "comparison", "value")]
+        
+    }
+    
+    return(output)
+    
+}
