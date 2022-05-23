@@ -116,7 +116,7 @@ descr_table = function(data, vars, group=NA, digits=2, reference_grp=NA,
 # define function for assigning gifted status based on optimal id
 identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
                           mode = "decisions", listwise=TRUE, weights = NA) {
-  
+
   if (mode %!in% c("decisions", "meanscores")) {
     stop("argument 'mode' must be one of 'decisions' or 'meanscores'")
   }
@@ -614,11 +614,14 @@ equity_plot = function(data,
 }
 
 
-get_equity_multi <- function(data, group, reference_grp, pathways, baseline_id_var, opti_prefix="opti") {
+get_equity_multi <- function(data, group, reference_grp, 
+                             pathways, baseline_id_var, 
+                             opti_prefix="opti") {
     
     original_colnames = names(data)
     
     # create a designator variable for identification under optimal id
+    pathway_name = rep(NA, times=length(pathways))
     
     for (i in 1:length(pathways)) {
         
@@ -632,17 +635,24 @@ get_equity_multi <- function(data, group, reference_grp, pathways, baseline_id_v
             pathways[[i]][['weights']] = NA
         } 
         
+        # check if listwise was specified for this list entry, 
+        #  if not default it to TRUE
+        if (is.null(pathways[[i]][['listwise']])) {
+            pathways[[i]][['listwise']] = TRUE
+        } 
+
         data[paste0(opti_prefix, "_", pathway_name[i])] <- identify_opti(
             data = data, 
             assessments = pathways[[i]][['assessments']],
             nom = pathways[[i]][['nom']],
             nom_cutoff = pathways[[i]][['nom_cutoff']],
             test_cutoff = pathways[[i]][['test_cutoff']], 
+            listwise=pathways[[i]][['listwise']],
             weights=pathways[[i]][['weights']],
             mode="decisions"
         )
     }
-    
+
     # get a new column that is the min across the new columns
     new_colnames = names(data)[names(data) %!in% original_colnames]
     
@@ -656,7 +666,7 @@ get_equity_multi <- function(data, group, reference_grp, pathways, baseline_id_v
     # make a list to hold the output
     output = list()
     
-    for (i in 1:length(pathways) + 1) {
+    for (i in 1:(length(pathways) + 1)) {
         
         # calculate equity table statistics
         eq_tbl <- equity_table(
@@ -672,46 +682,144 @@ get_equity_multi <- function(data, group, reference_grp, pathways, baseline_id_v
         
         t2 <- equity_table_to_long(eq_tbl,
                                    group = group, total_var = "total",
-                                   target_vars = c(baseline_id_var, 
+                                   target_vars = c(baseline_id_var,
                                                    new_colnames[i])
         )
-        
+
         t3 <- calc_RI(
             eq_tbl = eq_tbl, group = group, total_var = "total",
             target_vars = c(baseline_id_var, new_colnames[i])
         )
-        
+
         t4 <- calc_RI_ratio(
             eq_tbl = eq_tbl, group = group, total_var = "total",
             target_vars = c(baseline_id_var, new_colnames[i]),
             reference_grp = reference_grp
         )
-        
+
         t5 <- calc_comparison_metrics(
             eq_tbl = eq_tbl, group = group, total_var = "total",
-            target_vars = c(baseline_id_var, new_colnames[i]), 
+            target_vars = c(baseline_id_var, new_colnames[i]),
             reference_grp = reference_grp
-        ) 
-        
+        )
+
         t6 <- calc_CramerV(
             eq_tbl = eq_tbl, group = group, total_var = "total",
             target_vars = c(baseline_id_var, new_colnames[i])
         )
-        
+
         t7 <- equity_table_to_long(eq_tbl,
                                    group = NA, total_var = "total",
                                    target_vars = c(baseline_id_var, new_colnames[i])
         )
-        
+
         # stack sub-results
         out = bind_rows(t2, t1, t3, t4, t5, t6, t7)
-        
+
         # reorder cols
         output[[new_colnames[i]]] = out[, c(
             group, "metric", "baseline", "comparison", "value")]
+    
         
     }
     
     return(output)
     
 }
+
+
+
+equity_plot_multi = function(data,
+                       group,
+                       reference_grp,
+                       pathways,
+                       baseline_id_var,
+                       plot_metric,
+                       selected_pathway=1) {
+    
+    
+    summary_tbl = get_equity_multi(data=data,
+                             group=group,
+                             reference_grp=reference_grp,
+                             pathways=pathways,
+                             baseline_id_var=baseline_id_var)[[selected_pathway]]
+    
+    
+
+    # this line filters out any row from the summary table with an NA for any
+    #  of the columns in 'group' -- except for the rows for Cramer's V
+    summary_tbl = summary_tbl[!apply(is.na(
+        dplyr::select_at(summary_tbl, group)), 
+        1, max) | summary_tbl$metric == 'CramerV', ]
+    
+    terse_metric = dplyr::case_when(
+        plot_metric == 'Count' ~ 'count',
+        plot_metric == 'Representation Index' ~ 'RI',
+        plot_metric == 'Relative Risk' ~ 'RR',
+        plot_metric == 'Proportion Identified' ~ 'pct_identified',
+        plot_metric == "Cramer's V"~ 'CramerV'
+    )
+    
+    p = ggplot(data=dplyr::filter(summary_tbl, metric==terse_metric), 
+               aes(x=comparison, y=value, fill=comparison))+
+        geom_bar(stat="identity", alpha=.65)+
+        geom_text(aes(label=round(value, 3)), nudge_y=-0.01, size=5)+
+        geom_hline(yintercept=0)+
+        theme_bw()+
+        theme(legend.position="bottom",
+              axis.text.x = element_text(angle = 45, hjust = 1))+
+        scale_fill_brewer(palette="Set1")+
+        ggtitle(paste0("Metric: ", plot_metric))+
+        theme(text=element_text(size=16))+
+        labs(fill=NULL)
+    
+    if (length(group)==1) {
+        if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+            p = p + facet_wrap(vars(get(group)))
+        } else if (terse_metric != 'CramerV') {
+            p = p + facet_wrap(vars(get(group)), scales="free_y")
+        }
+    }
+    
+    if (length(group)==2) {
+        if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+            p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])))
+        } else if (terse_metric != 'CramerV') {
+            p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])), 
+                               scales="free_y")
+        }
+    }
+    
+    return(list(p=p, summary_tbl=summary_tbl))
+}
+
+# data = read_excel('~/Downloads/AshevilleData.xlsx')
+# get_equity_multi(
+#     data = read_excel('~/Downloads/AshevilleData.xlsx'),
+#     group="Race",
+#     reference_grp="Race=='White'",
+#     pathways = list(mypath=list(
+#         assessments="Z_CogAT_V",
+#         nom="Z_CogAT_V",
+#         nom_cutoff=.8,
+#         test_cutoff=.9)),
+#     baseline_id_var="Gifted"
+# )
+# 
+# p
+# results = equity_plot_multi(data=mydata, #dat()
+#                             group=input$group,
+#                             reference_grp=filter_string,
+#                             pathways=list(pathway_1 = list(
+#                                 assessments=input$assessments,
+#                                 listwise=listwise$listwise,
+#                                 nom=input$nom,
+#                                 nom_cutoff=input$nom_cutoff,
+#                                 test_cutoff=input$mean_cutoff,
+#                                 weights=weights$w[1:length(input$assessments)])
+#                             ),
+#                             baseline_id_var=input$baseline_id_var,
+#                             plot_metric=input$metric,
+#                             selected_pathway=input$pathway
+# )
+

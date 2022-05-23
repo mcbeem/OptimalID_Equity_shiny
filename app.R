@@ -24,6 +24,7 @@ library(markdown)
 library(giftedCalcs)
 
 
+
 # import functions
 source("functions.R")
 
@@ -104,7 +105,7 @@ ui <- fluidPage(
             label = "Type of file selected",
             inline = TRUE,
             choices = c("excel", "csv"),
-            selected = "csv"
+            selected = "excel"
           ),
           
           conditionalPanel(
@@ -380,6 +381,13 @@ ui <- fluidPage(
             selected = "Count"),
           
           HTML("<br>"),
+          
+          # TODO: make this conditional and populate it with pathway names
+          selectInput(
+              inputId = "pathway",
+              label = "Pathway to display",
+              choices = c(1,2,3,4,5),
+              selected = 1),
           
           plotOutput("plot", width="120%", height= "500px"),
         )
@@ -844,17 +852,21 @@ server <- function(input, output, session) {
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
-        results = equity_plot(data=mydata, #dat()
+        results = equity_plot_multi(data=mydata, #dat()
                     group=input$group,
                     reference_grp=filter_string,
-                    assessments=input$assessments,
-                    listwise=listwise$listwise,
-                    nom=input$nom,
-                    nom_cutoff=input$nom_cutoff,
-                    mean_cutoff=input$mean_cutoff,
+                    pathways=list(pathway_1 = list(
+                        assessments=input$assessments,
+                        listwise=listwise$listwise,
+                        nom=input$nom,
+                        nom_cutoff=input$nom_cutoff,
+                        test_cutoff=input$mean_cutoff,
+                        weights=weights$w[1:length(input$assessments)])
+                    ),
                     baseline_id_var=input$baseline_id_var,
                     plot_metric=input$metric,
-                    weights=weights$w[1:length(input$assessments)])
+                    selected_pathway=as.numeric(input$pathway)
+                    )
       
         # process the equity table - format for display
         tbl_long = results$summary_tbl
