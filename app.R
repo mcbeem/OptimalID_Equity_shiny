@@ -28,9 +28,17 @@ library(giftedCalcs)
 # import functions
 source("functions.R")
 
+
 # ui ----------------------------------------------------------------------
 # Define UI for the application
 ui <- fluidPage(
+  
+    tags$head(tags$style(
+      HTML('
+           #border {
+              border: 1px solid black;
+          }')
+    )),
 
     theme = shinytheme("readable"),
     # enable MathJax (not currently used)
@@ -65,7 +73,7 @@ ui <- fluidPage(
     
     headerPanel("Optimal ID equity explorer"),
     
-    tabsetPanel(
+    tabsetPanel(id="main",
       
 # About tab ---------------------------------------------------------------
       tabPanel("About",
@@ -75,7 +83,6 @@ ui <- fluidPage(
                htmltools::includeMarkdown("helpText.md")
         ),
       
-
 # Data tab ----------------------------------------------------------------
       tabPanel("Data",
         shinyjs::useShinyjs(),
@@ -189,210 +196,778 @@ ui <- fluidPage(
         
       ), # closes tabpanel 'data'
 
-# Plot panel --------------------------------------------------------------
-      tabPanel("Setup and Plot",
-        
-        sidebarLayout(
-          sidebarPanel(
-            
-            selectizeInput(
-              inputId = "group", 
-              label = "Group(s) for equity analysis", 
-              multiple = TRUE,
-              choices = NULL,
-              options=list(maxItems=2)
-              ),
-    
-            conditionalPanel(
-              condition = "input.group.length >= 1",
-              selectInput(
-                inputId = "reference_grp1", 
-                label = "Reference group for first group", 
-                choices = NULL
-              )
-            ),
-            
-            conditionalPanel(
-              condition = "input.group.length >= 2",
-              selectInput(
-                inputId = "reference_grp2", 
-                label = "Reference group for second group", 
-                choices = NULL
-              )
-            ),
-            
-            selectizeInput(
-              inputId = "assessments", 
-              label = "Assessments", 
-              multiple = TRUE,
-              choices = NULL,
-              options=list(maxItems=6)
-              ),
-            
-            helpText("(don't turn this off unless you really know what you are doing)"),
-            
-            checkboxInput(
-                inputId = "listwise",
-                label = "Phase-II listwise deletion",
-                value = TRUE
-            ),
-          
-            checkboxInput(
-              inputId = "adj_weights",
-              label = "Adjust weights?",
-            ),
-            
-            conditionalPanel(
-              condition = "input.adj_weights && input.assessments.length >= 1",
-              
-              helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
-              
-              div(
-                numericInput(
-                  inputId = "weight1",
-                  label = "Weight for first assessment",
-                  value = 1,
-                  min = 0,
-                  max = 10,
-                  step = .1,
-                  width = '90%'),
-                style='font-size:80%')
-            ),
-            
-            conditionalPanel(
-              condition = "input.adj_weights && input.assessments.length >= 2",
-              
-              div(
-                numericInput(
-                  inputId = "weight2",
-                  label = "Weight for second assessment",
-                  value = 1,
-                  min = 0,
-                  max = 10,
-                  step = .1,
-                  width = '90%'),
-              style='font-size:80%')
-            ),
 
-            
-            conditionalPanel(
-              condition = "input.adj_weights && input.assessments.length >= 3",
-              
-              div(
-                numericInput(
-                  inputId = "weight3",
-                  label = "Weight for third assessment",
-                  value = 1,
-                  min = 0,
-                  max = 10,
-                  step = .1,
-                  width = '90%'),
-                style='font-size:80%')
-              ),
-            
-            conditionalPanel(
-              condition = "input.adj_weights && input.assessments.length >= 4",
-              
-              div(
-                numericInput(
-                  inputId = "weight4",
-                  label = "Weight for fourth assessment",
-                  value = 1,
-                  min = 0,
-                  max = 10,
-                  step = .1,
-                  width = '90%'),
-                style='font-size:80%')
-            ),
-            
-            conditionalPanel(
-              condition = "input.adj_weights && input.assessments.length >= 5",
-              
-              div(
-                numericInput(
-                  inputId = "weight5",
-                  label = "Weight for fifth assessment",
-                  value = 1,
-                  min = 0,
-                  max = 10,
-                  step = .1,
-                  width = '90%'),
-              style='font-size:80%')
-            ),
-            
-            conditionalPanel(
-              condition = "input.adj_weights && input.assessments.length >= 6",
-              
-              div(
-                numericInput(
-                  inputId = "weight6",
-                  label = "Weight for sixth assessment",
-                  value = 1,
-                  min = 0,
-                  max = 10,
-                  step = .1,
-                  width = '90%'),
-                style='font-size:80%')
-            ),
-            
-            
-            selectInput(
-              inputId = "nom", 
-              label = "Nomination instrument", 
-              choices = NULL
-            ),
-            
-            selectInput(
-              inputId = "baseline_id_var", 
-              label = "Baseline id variable", 
-              choices = NULL
-              ),
-            
-            sliderInput(
-              inputId = "nom_cutoff",
-              label = "Nomination cutoff percentile",
-              min = .001,
-              max = .999,
-              value = .7,
-              step=.001
-              ),
-      
-            sliderInput(
-              inputId = "mean_cutoff",
-              label = HTML("Mean score (phase-II) cutoff percentile"),
-              min = .001,
-              max = .999,
-              value = .9,
-              step=.001
-              ),
-            
-      
-          ), # closes sidebarPanel
-  
-        mainPanel(
+# Setup panel -------------------------------------------------------------
+
+      tabPanel("Setup",
+        
+               fluidRow(
+                 
+                 column(3, 
+                        
+                        selectizeInput(
+                          inputId = "group", 
+                          label = "Group(s) for equity analysis", 
+                          multiple = TRUE,
+                          choices = NULL,
+                          options=list(maxItems=2)
+                        ),
+                        
+                        conditionalPanel(
+                          condition = "input.group.length >= 1",
+                          selectInput(
+                            inputId = "reference_grp1", 
+                            label = "Reference group for first group", 
+                            choices = NULL
+                          )
+                        ),
+                        
+                        conditionalPanel(
+                          condition = "input.group.length >= 2",
+                          selectInput(
+                            inputId = "reference_grp2", 
+                            label = "Reference group for second group", 
+                            choices = NULL
+                          )
+                        ),
+                        
+                        selectInput(
+                          inputId = "baseline_id_var", 
+                          label = "Baseline id variable", 
+                          choices = NULL
+                        ),
+                        
+                        helpText("(don't turn this off unless you really know what you are doing)"),
+                        
+                        checkboxInput(
+                          inputId = "listwise",
+                          label = "Phase-II listwise deletion",
+                          value = TRUE
+                        ),
+                        
+                        actionButton(
+                          inputId = "btn_addPathway",
+                          label = HTML("Add another<br/>identification pathway")
+                        ),
+                        
+                        actionButton(
+                          inputId = "btn_removePathway",
+                          label = HTML("Remove the last<br/>identification pathway")
+                        )
+                 ) # closes column()
+               ) # closes fluidRow
+      ), # closes tabPanel
+        
+
+# Panel for pathway 1 --------------------------------------------------------------
+      tabPanel("Pathway 1",
           
-          HTML("<br>"),
- 
-          selectInput(
-            inputId = "metric", 
-            label = "Equity metric", 
-            choices = c("Count", "Representation Index", "Proportion Identified", 
-                        "Relative Risk", "Cramer's V"),
-            selected = "Count"),
+        fluidRow(
           
-          HTML("<br>"),
+          column(3, 
+                 
+                 HTML("<br>"),
+                 
+                 textInput(
+                   inputId = "lbl_pathway1",
+                   label = "Name for pathway 1",
+                   placeholder = "Pathway1"
+                 ),
+                 
+                 selectizeInput(
+                   inputId = "assessments", 
+                   label = "Assessments", 
+                   multiple = TRUE,
+                   choices = NULL,
+                   options=list(maxItems=6)
+                 ),
+                 
+                 
+                 checkboxInput(
+                   inputId = "adj_weights",
+                   label = "Adjust weights?",
+                 ),
+                 
+                 conditionalPanel(
+                   condition = "input.adj_weights && input.assessments.length >= 1",
+                   
+                   helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
+                   
+                   div(
+                     numericInput(
+                       inputId = "weight1",
+                       label = "Weight for first assessment",
+                       value = 1,
+                       min = 0,
+                       max = 10,
+                       step = .1,
+                       width = '90%'),
+                     style='font-size:80%')
+                 ),
+                 
+                 conditionalPanel(
+                   condition = "input.adj_weights && input.assessments.length >= 2",
+                   
+                   div(
+                     numericInput(
+                       inputId = "weight2",
+                       label = "Weight for second assessment",
+                       value = 1,
+                       min = 0,
+                       max = 10,
+                       step = .1,
+                       width = '90%'),
+                     style='font-size:80%')
+                 ),
+                 
+                 
+                 conditionalPanel(
+                   condition = "input.adj_weights && input.assessments.length >= 3",
+                   
+                   div(
+                     numericInput(
+                       inputId = "weight3",
+                       label = "Weight for third assessment",
+                       value = 1,
+                       min = 0,
+                       max = 10,
+                       step = .1,
+                       width = '90%'),
+                     style='font-size:80%')
+                 ),
+                 
+                 conditionalPanel(
+                   condition = "input.adj_weights && input.assessments.length >= 4",
+                   
+                   div(
+                     numericInput(
+                       inputId = "weight4",
+                       label = "Weight for fourth assessment",
+                       value = 1,
+                       min = 0,
+                       max = 10,
+                       step = .1,
+                       width = '90%'),
+                     style='font-size:80%')
+                 ),
+                 
+                 conditionalPanel(
+                   condition = "input.adj_weights && input.assessments.length >= 5",
+                   
+                   div(
+                     numericInput(
+                       inputId = "weight5",
+                       label = "Weight for fifth assessment",
+                       value = 1,
+                       min = 0,
+                       max = 10,
+                       step = .1,
+                       width = '90%'),
+                     style='font-size:80%')
+                 ),
+                 
+                 conditionalPanel(
+                   condition = "input.adj_weights && input.assessments.length >= 6",
+                   
+                   div(
+                     numericInput(
+                       inputId = "weight6",
+                       label = "Weight for sixth assessment",
+                       value = 1,
+                       min = 0,
+                       max = 10,
+                       step = .1,
+                       width = '90%'),
+                     style='font-size:80%')
+                 ),
+                 
+                 
+                 selectInput(
+                   inputId = "nom", 
+                   label = "Nomination instrument", 
+                   choices = NULL
+                 ),
+                 
+                 
+                 sliderInput(
+                   inputId = "nom_cutoff",
+                   label = "Nomination cutoff percentile",
+                   min = .001,
+                   max = .999,
+                   value = .7,
+                   step=.001
+                 ),
+                 
+                 sliderInput(
+                   inputId = "mean_cutoff",
+                   label = HTML("Mean score (phase-II) cutoff percentile"),
+                   min = .001,
+                   max = .999,
+                   value = .9,
+                   step=.001
+                 ),
+                 
+          ), # closes column for pathway 1
           
-          # TODO: make this conditional and populate it with pathway names
-          selectInput(
-              inputId = "pathway",
-              label = "Pathway to display",
-              choices = c(1,2,3,4,5),
-              selected = 1),
-          
-          plotOutput("plot", width="120%", height= "500px"),
-        )
-      ) # closes sidebarLayout
-    ), # closes tabPanel 'Plot'
+          column(9,
+                   
+           HTML("<br>"),
+           
+           selectInput(
+             inputId = "metric", 
+             label = "Equity metric", 
+             choices = c("Count", "Representation Index", "Proportion Identified", 
+                         "Relative Risk", "Cramer's V"),
+             selected = "Count"),
+           
+           HTML("<br>"),
+           
+           plotOutput("plot", width="120%", height= "500px"),
+           
+          ) #closes column()
+        
+        ) #closes fluidRow
+       
+  ), # closes tabPanel 'Pathway 1'
+
+# Panel for pathway 2 --------------------------------------------------------------
+tabPanel("Pathway 2",
+
+         fluidRow(
+
+           column(3,
+                  
+                  HTML("<br>"),
+
+                  textInput(
+                    inputId = "lbl_pathway2",
+                    label = "Name for pathway 2",
+                    placeholder = "Pathway2"
+                  ),
+
+                  selectizeInput(
+                    inputId = "assessments2",
+                    label = "Assessments",
+                    multiple = TRUE,
+                    choices = NULL,
+                    options=list(maxItems=6)
+                  ),
+
+
+                  checkboxInput(
+                    inputId = "adj_weights2",
+                    label = "Adjust weights?",
+                  ),
+
+                  conditionalPanel(
+                    condition = "input.adj_weights2 && input.assessments2.length >= 1",
+
+                    helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
+
+                    div(
+                      numericInput(
+                        inputId = "weight21",
+                        label = "Weight for first assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+
+                  conditionalPanel(
+                    condition = "input.adj_weights2 && input.assessments2.length >= 2",
+
+                    div(
+                      numericInput(
+                        inputId = "weight22",
+                        label = "Weight for second assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+
+
+                  conditionalPanel(
+                    condition = "input.adj_weights2 && input.assessments2.length >= 3",
+
+                    div(
+                      numericInput(
+                        inputId = "weight23",
+                        label = "Weight for third assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+
+                  conditionalPanel(
+                    condition = "input.adj_weights2 && input.assessments2.length >= 4",
+
+                    div(
+                      numericInput(
+                        inputId = "weight24",
+                        label = "Weight for fourth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+
+                  conditionalPanel(
+                    condition = "input.adj_weights2 && input.assessments2.length >= 5",
+
+                    div(
+                      numericInput(
+                        inputId = "weight25",
+                        label = "Weight for fifth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+
+                  conditionalPanel(
+                    condition = "input.adj_weights2 && input.assessments2.length >= 6",
+
+                    div(
+                      numericInput(
+                        inputId = "weight26",
+                        label = "Weight for sixth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+
+
+                  selectInput(
+                    inputId = "nom2",
+                    label = "Nomination instrument",
+                    choices = NULL
+                  ),
+
+
+                  sliderInput(
+                    inputId = "nom_cutoff2",
+                    label = "Nomination cutoff percentile",
+                    min = .001,
+                    max = .999,
+                    value = .7,
+                    step=.001
+                  ),
+
+                  sliderInput(
+                    inputId = "mean_cutoff2",
+                    label = HTML("Mean score (phase-II) cutoff percentile"),
+                    min = .001,
+                    max = .999,
+                    value = .9,
+                    step=.001
+                  ),
+
+           ), # closes column for pathway 2
+
+           column(9,
+
+                  HTML("<br>"),
+
+                  selectInput(
+                    inputId = "metric2",
+                    label = "Equity metric",
+                    choices = c("Count", "Representation Index", "Proportion Identified",
+                                "Relative Risk", "Cramer's V"),
+                    selected = "Count"),
+
+                  HTML("<br>"),
+
+                  plotOutput("plot2", width="120%", height= "500px"),
+
+           ) #closes column()
+
+         ) # closes fluidRow
+         
+      ), # closes tabPanel
+
+
+# Panel for pathway 3 ------------------------------------------------------------
+tabPanel("Pathway 3",
+         
+         fluidRow(
+           
+           HTML("<br>"),
+           
+           column(3,
+                  
+                  textInput(
+                    inputId = "lbl_pathway3",
+                    label = "Name for pathway 3",
+                    placeholder = "Pathway3"
+                  ),
+                  
+                  selectizeInput(
+                    inputId = "assessments3", 
+                    label = "Assessments", 
+                    multiple = TRUE,
+                    choices = NULL,
+                    options=list(maxItems=6)
+                  ),
+                  
+                  
+                  checkboxInput(
+                    inputId = "adj_weights3",
+                    label = "Adjust weights?",
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights3 && input.assessments3.length >= 1",
+                    
+                    helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight31",
+                        label = "Weight for first assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights3 && input.assessments3.length >= 2",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight32",
+                        label = "Weight for second assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights3 && input.assessments3.length >= 3",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight33",
+                        label = "Weight for third assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights3 && input.assessments3.length >= 4",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight34",
+                        label = "Weight for fourth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights3 && input.assessments3.length >= 5",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight35",
+                        label = "Weight for fifth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights3 && input.assessments3.length >= 6",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight36",
+                        label = "Weight for sixth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  
+                  selectInput(
+                    inputId = "nom3",
+                    label = "Nomination instrument", 
+                    choices = NULL
+                  ),
+                  
+                  
+                  sliderInput(
+                    inputId = "nom_cutoff3",
+                    label = "Nomination cutoff percentile",
+                    min = .001,
+                    max = .999,
+                    value = .7,
+                    step=.001
+                  ),
+                  
+                  sliderInput(
+                    inputId = "mean_cutoff3",
+                    label = HTML("Mean score (phase-II) cutoff percentile"),
+                    min = .001,
+                    max = .999,
+                    value = .9,
+                    step=.001
+                  ),
+                  
+           ), # closes column for pathway 3
+           
+           column(9,
+                  
+                  selectInput(
+                    inputId = "metric3",
+                    label = "Equity metric",
+                    choices = c("Count", "Representation Index", "Proportion Identified",
+                                "Relative Risk", "Cramer's V"),
+                    selected = "Count"),
+                  
+                  HTML("<br>"),
+                  
+                  plotOutput("plot3", width="120%", height= "500px"),
+                  
+           ) #closes column()
+           
+         ) # closes fluidRow
+         
+), # closes tabPanel
+
+
+# Panel for pathway 4 ------------------------------------------------------------
+tabPanel("Pathway 4",
+         
+         fluidRow(
+           
+           HTML("<br>"),
+           
+           column(3,
+                  
+                  textInput(
+                    inputId = "lbl_pathway4",
+                    label = "Name for pathway 4",
+                    placeholder = "Pathway4",
+                  ),
+                  
+                  selectizeInput(
+                    inputId = "assessments4", 
+                    label = "Assessments", 
+                    multiple = TRUE,
+                    choices = NULL,
+                    options=list(maxItems=6)
+                  ),
+                  
+                  
+                  checkboxInput(
+                    inputId = "adj_weights4",
+                    label = "Adjust weights?",
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights4 && input.assessments4.length >= 1",
+                    
+                    helpText(HTML("<strong>Note</strong>: weights are normalized to sum to the number of assessments")),
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight41",
+                        label = "Weight for first assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights4 && input.assessments4.length >= 2",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight42",
+                        label = "Weight for second assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights4 && input.assessments4.length >= 3",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight43",
+                        label = "Weight for third assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights4 && input.assessments4.length >= 4",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight44",
+                        label = "Weight for fourth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights4 && input.assessments4.length >= 5",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight45",
+                        label = "Weight for fifth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  conditionalPanel(
+                    condition = "input.adj_weights4 && input.assessments4.length >= 6",
+                    
+                    div(
+                      numericInput(
+                        inputId = "weight46",
+                        label = "Weight for sixth assessment",
+                        value = 1,
+                        min = 0,
+                        max = 10,
+                        step = .1,
+                        width = '90%'),
+                      style='font-size:80%')
+                  ),
+                  
+                  
+                  selectInput(
+                    inputId = "nom4",
+                    label = "Nomination instrument", 
+                    choices = NULL
+                  ),
+                  
+                  
+                  sliderInput(
+                    inputId = "nom_cutoff4",
+                    label = "Nomination cutoff percentile",
+                    min = .001,
+                    max = .999,
+                    value = .7,
+                    step=.001
+                  ),
+                  
+                  sliderInput(
+                    inputId = "mean_cutoff4",
+                    label = HTML("Mean score (phase-II) cutoff percentile"),
+                    min = .001,
+                    max = .999,
+                    value = .9,
+                    step=.001
+                  ),
+                  
+           ), # closes column for pathway 4
+           
+           column(9,
+                  
+                  selectInput(
+                    inputId = "metric4",
+                    label = "Equity metric",
+                    choices = c("Count", "Representation Index", "Proportion Identified",
+                                "Relative Risk", "Cramer's V"),
+                    selected = "Count"),
+                  
+                  HTML("<br>"),
+                  
+                  plotOutput("plot4", width="120%", height= "500px"),
+                  
+           ) #closes column()
+           
+         ) # closes fluidRow
+         
+), # closes tabPanel
+
+# Panel for marginal  ------------------------------------------------------------
+tabPanel("All pathways",
+         
+         fluidRow(
+           
+           HTML("<br>"),
+           
+           column(3),
+           
+           column(9,
+                  
+                  selectInput(
+                    inputId = "metric_all",
+                    label = "Equity metric",
+                    choices = c("Count", "Representation Index", "Proportion Identified",
+                                "Relative Risk", "Cramer's V"),
+                    selected = "Count"),
+                  
+                  HTML("<br>"),
+                  
+                  plotOutput("plot_all", width="120%", height= "500px"),
+                  
+           ) #closes column()
+           
+         ) # closes fluidRow
+         
+), # closes tabPanel
 
 # Equity table panel ------------------------------------------------------
   tabPanel("Equity table",
@@ -453,13 +1028,21 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # initialize the app with a disabled load file action button
+    # and a disabled 'remove pathway' button
   shinyjs::disable('loadFile')
+  shinyjs::disable("btn_removePathway")
+  
+  # hide tabs on load
+  hideTab(inputId = "main", target = "Pathway 2")
+  hideTab(inputId = "main", target = "Pathway 3")
+  hideTab(inputId = "main", target = "Pathway 4")
+  hideTab(inputId = "main", target = "All pathways")
   
   # enable the load file button once a file is loaded
   observeEvent(input$file, {
     shinyjs::enable('loadFile')
   })
-
+  
   
   # initialize the 'dat' reactive object
   dat <- reactiveVal()
@@ -482,7 +1065,10 @@ server <- function(input, output, session) {
   
   # initialize the 'weights' reactive object
   weights <- reactiveValues(
-    w=rep(1, times=6)
+    w=rep(1, times=6),
+    w2=rep(1, times=6),
+    w3=rep(1, times=6),
+    w4=rep(1, times=6)
   )
   
   # initialize the 'listwise' reactive object
@@ -495,7 +1081,100 @@ server <- function(input, output, session) {
     filename=NULL
   )
   
+  # create a reactive object to store the status of the "remove pathway"
+  #  button
+  pathway_status <- reactiveValues(
+      remove_btn_enabled = FALSE,
+      add_btn_enabled = TRUE,
+      last_pathway = 1
+    )
   
+  
+  observeEvent(input$btn_addPathway, {
+
+      pathway_status$last_pathway = pathway_status$last_pathway + 1
+ 
+      if (pathway_status$last_pathway == 4) {
+          shinyjs::show("Max pathways are 4")
+          pathway_status$add_btn_enabled = FALSE
+      }
+
+      if (pathway_status$last_pathway > 1) {
+          pathway_status$remove_btn_enabled = TRUE
+          showTab(inputId = "main", target = "All pathways")
+      }
+      
+      if (pathway_status$add_btn_enabled == TRUE) {
+          shinyjs::enable("btn_addPathway")
+        } else {shinyjs::disable("btn_addPathway")}
+
+
+      if (pathway_status$remove_btn_enabled == TRUE) {
+          shinyjs::enable("btn_removePathway")
+        } else {shinyjs::disable("btn_removePathway")}
+
+      
+      if (pathway_status$last_pathway == 2) {
+        showTab(inputId = "main", target = "Pathway 2")
+      }
+      
+      if (pathway_status$last_pathway == 3) {
+        showTab(inputId = "main", target = "Pathway 3")
+      }
+      
+      if (pathway_status$last_pathway == 4) {
+        showTab(inputId = "main", target = "Pathway 4")
+      }
+
+      print(pathway_status$last_pathway)
+  })
+
+  observeEvent(input$btn_removePathway, {
+      
+      if (pathway_status$last_pathway > 1) {
+        pathway_status$last_pathway = pathway_status$last_pathway - 1
+      }
+      
+      if (pathway_status$last_pathway == 1) {
+          shinyjs::show("Min pathways are 1")
+          pathway_status$add_btn_enabled = TRUE
+          pathway_status$remove_btn_enabled = FALSE
+      }
+      
+      if (pathway_status$last_pathway < 4) {
+          pathway_status$add_btn_enabled = TRUE
+      }
+      
+      if (pathway_status$add_btn_enabled == TRUE) {
+          shinyjs::enable("btn_addPathway")
+      } else {shinyjs::disable("btn_addPathway")}
+      
+      
+      if (pathway_status$remove_btn_enabled == TRUE) {
+          shinyjs::enable("btn_removePathway")
+      } else {shinyjs::disable("btn_removePathway")}
+      
+      if (pathway_status$last_pathway == 1) {
+        hideTab(inputId = "main", target = "Pathway 2")
+        hideTab(inputId = "main", target = "Pathway 3")
+        hideTab(inputId = "main", target = "Pathway 4")
+        hideTab(inputId = "main", target = "All pathways")
+      }
+      
+      if (pathway_status$last_pathway == 2) {
+        hideTab(inputId = "main", target = "Pathway 3")
+        hideTab(inputId = "main", target = "Pathway 4")
+      }
+      
+      if (pathway_status$last_pathway == 3) {
+        hideTab(inputId = "main", target = "Pathway 4")
+      }
+      
+      print(pathway_status$last_pathway)
+  })  
+          
+
+
   # do the initial data loading when no filtering has been selected
   observeEvent(input$loadFile, {
     
@@ -637,6 +1316,12 @@ server <- function(input, output, session) {
     observe({
       weights$w=c(input$weight1, input$weight2, input$weight3, 
                   input$weight4, input$weight5, input$weight6)
+      weights$w2=c(input$weight21, input$weight22, input$weight23, 
+                  input$weight24, input$weight25, input$weight26)
+      weights$w3=c(input$weight31, input$weight32, input$weight33, 
+                   input$weight34, input$weight35, input$weight36)
+      weights$w4=c(input$weight41, input$weight42, input$weight43, 
+                   input$weight44, input$weight45, input$weight46)
     })
     
     observe({
@@ -762,11 +1447,47 @@ server <- function(input, output, session) {
         inputId = "assessments", 
         choices = variable_names())
     })
+    observe({
+      updateSelectInput(
+        session = session, 
+        inputId = "assessments2", 
+        choices = variable_names())
+    })
+    observe({
+      updateSelectInput(
+        session = session, 
+        inputId = "assessments3", 
+        choices = variable_names())
+    })
+    observe({
+      updateSelectInput(
+        session = session, 
+        inputId = "assessments4", 
+        choices = variable_names())
+    })
     
     observe({
       updateSelectInput(
         session = session, 
         inputId = "nom", 
+        choices = variable_names())
+    })
+    observe({
+      updateSelectInput(
+        session = session, 
+        inputId = "nom2", 
+        choices = variable_names())
+    })
+    observe({
+      updateSelectInput(
+        session = session, 
+        inputId = "nom3", 
+        choices = variable_names())
+    })
+    observe({
+      updateSelectInput(
+        session = session, 
+        inputId = "nom4", 
         choices = variable_names())
     })
     
@@ -816,9 +1537,9 @@ server <- function(input, output, session) {
       filters$group_filter_string = filter_string
 
     }
-    
+
+# render plot1 ------------------------------------------------------------
     output$plot <- renderPlot({
-      
       
       if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
         
@@ -840,7 +1561,6 @@ server <- function(input, output, session) {
                                         mode = "meanscores", 
                                         weights = weights$w[1:length(input$assessments)])
         
-        
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
         tables$group_stats <- descr_table(data=mydata,
@@ -852,6 +1572,7 @@ server <- function(input, output, session) {
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
+        
         results = equity_plot_multi(data=mydata, #dat()
                     group=input$group,
                     reference_grp=filter_string,
@@ -865,7 +1586,7 @@ server <- function(input, output, session) {
                     ),
                     baseline_id_var=input$baseline_id_var,
                     plot_metric=input$metric,
-                    selected_pathway=as.numeric(input$pathway)
+                    selected_pathway=1
                     )
       
         # process the equity table - format for display
@@ -900,6 +1621,424 @@ server <- function(input, output, session) {
       }
       
     }) 
+    
+# render plot2-------------------------------------------------------------
+    output$plot2 <- renderPlot({
+      
+      
+      if (!is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
+        
+        # we construct 3 pieces of output here: the plot and both tables
+        #  this is needed to prevent users from needing to click on the all
+        #  the tabs prior to downloading the report
+        
+        # get the data out of the reactive object
+        mydata = dat()
+        
+        # assign a new variable in the local environment only!
+        #  (we don't want meanscore to appear as a variable for selection)
+        mydata$meanscore2 = identify_opti(data=mydata, 
+                                         assessments=input$assessments2, 
+                                         nom=input$nom2, 
+                                         nom_cutoff=input$nom_cutoff2, 
+                                         test_cutoff=input$mean_cutoff2,
+                                         listwise=listwise$listwise,
+                                         mode = "meanscores", 
+                                         weights = weights$w2[1:length(input$assessments2)])
+        
+        # construct the descriptive statistics table and load it into
+        #  the appropriate reactive element
+        # tables$group_stats <- descr_table(data=mydata,
+        #                                   group=group,
+        #                                   reference_grp=filter_string,
+        #                                   vars=unique(c("meanscore", input$assessments, input$nom)),
+        #                                   
+        # )
+        
+        # 'results' is a list containing both the plot ($p) and the raw equity statistics
+        #   table
+        
+        results = equity_plot_multi(data=mydata, #dat()
+                                    group=input$group,
+                                    reference_grp=filter_string,
+                                    pathways=list(pathway_2 = list(
+                                      assessments=input$assessments2,
+                                      listwise=listwise$listwise2,
+                                      nom=input$nom2,
+                                      nom_cutoff=input$nom_cutoff2,
+                                      test_cutoff=input$mean_cutoff2,
+                                      weights=weights$w2[1:length(input$assessments2)])
+                                    ),
+                                    baseline_id_var=input$baseline_id_var,
+                                    plot_metric=input$metric2,
+                                    selected_pathway=1
+        )
+        
+        # # process the equity table - format for display
+        # tbl_long = results$summary_tbl
+        # 
+        # tbl_long$value = round(tbl_long$value, 3)
+        # 
+        # tbl_wide = pivot_wider(
+        #   dplyr::filter(tbl_long, metric %in% 
+        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
+        #   names_from=c("metric"))
+        # 
+        # if (length(group) == 1) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # } else if (length(group) == 2) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide[[group[2]]],
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # }
+        # 
+        # # load the table into the reactive object for display and download
+        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        
+        # show the plot
+        return(results$p)
+        
+      }
+      
+    }) 
+    
+
+# render plot3 ------------------------------------------------------------
+    output$plot3 <- renderPlot({
+      
+      
+      if (!is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
+        
+        # we construct 3 pieces of output here: the plot and both tables
+        #  this is needed to prevent users from needing to click on the all
+        #  the tabs prior to downloading the report
+        
+        # get the data out of the reactive object
+        mydata = dat()
+        
+        # assign a new variable in the local environment only!
+        #  (we don't want meanscore to appear as a variable for selection)
+        mydata$meanscore3 = identify_opti(data=mydata, 
+                                          assessments=input$assessments3, 
+                                          nom=input$nom3, 
+                                          nom_cutoff=input$nom_cutoff3, 
+                                          test_cutoff=input$mean_cutoff3,
+                                          listwise=listwise$listwise,
+                                          mode = "meanscores", 
+                                          weights = weights$w3[1:length(input$assessments3)])
+        
+        # construct the descriptive statistics table and load it into
+        #  the appropriate reactive element
+        # tables$group_stats <- descr_table(data=mydata,
+        #                                   group=group,
+        #                                   reference_grp=filter_string,
+        #                                   vars=unique(c("meanscore", input$assessments, input$nom)),
+        #                                   
+        # )
+        
+        # 'results' is a list containing both the plot ($p) and the raw equity statistics
+        #   table
+        
+        results = equity_plot_multi(data=mydata, #dat()
+                                    group=input$group,
+                                    reference_grp=filter_string,
+                                    pathways=list(pathway_3 = list(
+                                      assessments=input$assessments3,
+                                      listwise=listwise$listwise3,
+                                      nom=input$nom3,
+                                      nom_cutoff=input$nom_cutoff3,
+                                      test_cutoff=input$mean_cutoff3,
+                                      weights=weights$w3[1:length(input$assessments3)])
+                                    ),
+                                    baseline_id_var=input$baseline_id_var,
+                                    plot_metric=input$metric3,
+                                    selected_pathway=1
+        )
+      
+        
+        # # process the equity table - format for display
+        # tbl_long = results$summary_tbl
+        # 
+        # tbl_long$value = round(tbl_long$value, 3)
+        # 
+        # tbl_wide = pivot_wider(
+        #   dplyr::filter(tbl_long, metric %in% 
+        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
+        #   names_from=c("metric"))
+        # 
+        # if (length(group) == 1) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # } else if (length(group) == 2) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide[[group[2]]],
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # }
+        # 
+        # # load the table into the reactive object for display and download
+        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        
+        # show the plot
+        return(results$p)
+        
+      }
+      
+    }) 
+    
+    # render plot4 ------------------------------------------------------------
+    output$plot4 <- renderPlot({
+      
+      
+      if (!is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
+        
+        # we construct 3 pieces of output here: the plot and both tables
+        #  this is needed to prevent users from needing to click on the all
+        #  the tabs prior to downloading the report
+        
+        # get the data out of the reactive object
+        mydata = dat()
+        
+        # assign a new variable in the local environment only!
+        #  (we don't want meanscore to appear as a variable for selection)
+        mydata$meanscore4 = identify_opti(data=mydata, 
+                                          assessments=input$assessments4, 
+                                          nom=input$nom4, 
+                                          nom_cutoff=input$nom_cutoff4, 
+                                          test_cutoff=input$mean_cutoff4,
+                                          listwise=listwise$listwise,
+                                          mode = "meanscores", 
+                                          weights = weights$w4[1:length(input$assessments4)])
+        
+        # construct the descriptive statistics table and load it into
+        #  the appropriate reactive element
+        # tables$group_stats <- descr_table(data=mydata,
+        #                                   group=group,
+        #                                   reference_grp=filter_string,
+        #                                   vars=unique(c("meanscore", input$assessments, input$nom)),
+        #                                   
+        # )
+        
+        # 'results' is a list containing both the plot ($p) and the raw equity statistics
+        #   table
+        
+        results = equity_plot_multi(data=mydata, #dat()
+                                    group=input$group,
+                                    reference_grp=filter_string,
+                                    pathways=list(pathway_4 = list(
+                                      assessments=input$assessments4,
+                                      listwise=listwise$listwise4,
+                                      nom=input$nom4,
+                                      nom_cutoff=input$nom_cutoff4,
+                                      test_cutoff=input$mean_cutoff4,
+                                      weights=weights$w4[1:length(input$assessments4)])
+                                    ),
+                                    baseline_id_var=input$baseline_id_var,
+                                    plot_metric=input$metric4,
+                                    selected_pathway=1
+        )
+        
+        
+        # # process the equity table - format for display
+        # tbl_long = results$summary_tbl
+        # 
+        # tbl_long$value = round(tbl_long$value, 3)
+        # 
+        # tbl_wide = pivot_wider(
+        #   dplyr::filter(tbl_long, metric %in% 
+        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
+        #   names_from=c("metric"))
+        # 
+        # if (length(group) == 1) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # } else if (length(group) == 2) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide[[group[2]]],
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # }
+        # 
+        # # load the table into the reactive object for display and download
+        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        
+        # show the plot
+        return(results$p)
+        
+      }
+      
+    })   
+
+# render marginal plot ----------------------------------------------------
+    output$plot_all <- renderPlot({
+      
+      pathways = list()
+      
+      # only render this plot if a group is selected, at least one of the 
+      #   sets of assessments is supplied, and at least one of the nomination
+      #   instruments is supplied
+      if (pathway_status$last_pathway > 1 &
+        !is.null(group) & 
+          (!is.null(input$assessments) | 
+                    !is.null(input$assessments2) |
+                    !is.null(input$assessments3) |
+                    !is.null(input$assessments4) ) &
+          (!is.null(input$nom) |
+           !is.null(input$nom2) |
+           !is.null(input$nom3) |
+           !is.null(input$nom4)) ) {
+        
+        # we construct 3 pieces of output here: the plot and both tables
+        #  this is needed to prevent users from needing to click on the all
+        #  the tabs prior to downloading the report
+        
+        # get the data out of the reactive object
+        mydata = dat()
+        
+        # assign a new variable in the local environment only!
+        #  (we don't want meanscore to appear as a variable for selection)
+        mydata$meanscore = identify_opti(data=mydata, 
+                                           assessments=input$assessments, 
+                                           nom=input$nom, 
+                                           nom_cutoff=input$nom_cutoff, 
+                                           test_cutoff=input$mean_cutoff,
+                                           listwise=listwise$listwise,
+                                           mode = "meanscores", 
+                                           weights = weights$w[1:length(input$assessments)])
+        
+        pathways = append(pathways, list(pathway_1 = list(
+          assessments=input$assessments,
+          listwise=listwise$listwise,
+          nom=input$nom,
+          nom_cutoff=input$nom_cutoff,
+          test_cutoff=input$mean_cutoff,
+          weights=weights$w[1:length(input$assessments)])
+          )
+        )
+                          
+        
+        if (pathway_status$last_pathway >= 2 & !is.null(input$assessments2) & 
+            !is.null(input$nom2)) {
+        
+          mydata$meanscore_2 = identify_opti(data=mydata, 
+                                             assessments=input$assessments2, 
+                                             nom=input$nom2, 
+                                             nom_cutoff=input$nom_cutoff2, 
+                                             test_cutoff=input$mean_cutoff2,
+                                             listwise=listwise$listwise,
+                                             mode = "meanscores", 
+                                             weights = weights$w2[1:length(input$assessments2)])
+          
+          pathways = append(pathways, list(pathway_2 = list(
+            assessments=input$assessments2,
+            listwise=listwise$listwise2,
+            nom=input$nom2,
+            nom_cutoff=input$nom_cutoff2,
+            test_cutoff=input$mean_cutoff2,
+            weights=weights$w2[1:length(input$assessments2)])
+            )
+          )
+        }
+        
+        if (pathway_status$last_pathway >= 3 & !is.null(input$assessments3) & 
+            !is.null(input$nom3)) {
+        
+          mydata$meanscore_3 = identify_opti(data=mydata, 
+                                           assessments=input$assessments3, 
+                                           nom=input$nom3, 
+                                           nom_cutoff=input$nom_cutoff3, 
+                                           test_cutoff=input$mean_cutoff3,
+                                           listwise=listwise$listwise,
+                                           mode = "meanscores", 
+                                           weights = weights$w3[1:length(input$assessments3)])
+          
+          pathways = append(pathways, list(pathway_3 = list(
+            assessments=input$assessments3,
+            listwise=listwise$listwise3,
+            nom=input$nom3,
+            nom_cutoff=input$nom_cutoff3,
+            test_cutoff=input$mean_cutoff3,
+            weights=weights$w3[1:length(input$assessments3)])
+            )
+          )
+        }
+        
+        if (pathway_status$last_pathway >= 4 & !is.null(input$assessments4) & 
+            !is.null(input$nom)) {
+          
+          mydata$meanscore_4 = identify_opti(data=mydata, 
+                                            assessments=input$assessments4, 
+                                            nom=input$nom4, 
+                                            nom_cutoff=input$nom_cutoff4, 
+                                            test_cutoff=input$mean_cutoff4,
+                                            listwise=listwise$listwise,
+                                            mode = "meanscores", 
+                                            weights = weights$w4[1:length(input$assessments4)])
+          
+          pathways = append(pathways, list(pathway_4 = list(
+            assessments=input$assessments4,
+            listwise=listwise$listwise4,
+            nom=input$nom4,
+            nom_cutoff=input$nom_cutoff4,
+            test_cutoff=input$mean_cutoff4,
+            weights=weights$w4[1:length(input$assessments4)])
+            )
+          )
+        }
+      
+        results = equity_plot_multi(data=mydata, 
+                                    group=input$group,
+                                    reference_grp=filter_string,
+                                    pathways=pathways,
+                                    baseline_id_var=input$baseline_id_var,
+                                    plot_metric=input$metric_all,
+                                    selected_pathway=length(pathways)+1
+        )
+        
+        
+        # # process the equity table - format for display
+        # tbl_long = results$summary_tbl
+        # 
+        # tbl_long$value = round(tbl_long$value, 3)
+        # 
+        # tbl_wide = pivot_wider(
+        #   dplyr::filter(tbl_long, metric %in% 
+        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
+        #   names_from=c("metric"))
+        # 
+        # if (length(group) == 1) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # } else if (length(group) == 2) {
+        #   
+        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
+        #                             tbl_wide[[group[2]]],
+        #                             tbl_wide$comparison,
+        #                             decreasing=TRUE, na.last=FALSE),]
+        # }
+        # 
+        # # load the table into the reactive object for display and download
+        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        
+        # show the plot
+        return(results$p)
+        
+      }
+      
+    })   
     
     output$tbl <- DT::renderDataTable({
       

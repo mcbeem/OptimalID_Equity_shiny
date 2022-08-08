@@ -658,7 +658,7 @@ get_equity_multi <- function(data, group, reference_grp,
     
     # get a new column which is TRUE if the student comes in under any path
     data[paste0(opti_prefix, "_any_pathway")] = as.logical(
-        apply(data[new_colnames], 1, min))
+        apply(data[new_colnames], 1, max))
     
     # add this new column to the new colnames
     new_colnames = c(new_colnames, paste0(opti_prefix, "_any_pathway"))
