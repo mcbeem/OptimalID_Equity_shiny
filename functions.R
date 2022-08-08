@@ -134,10 +134,13 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   w <- weights / sum(weights)
   
   # shortcut for calculating mean (as weighted sum)
-  #meanscore <- as.matrix(data[, assessments]) %*% w
-  
+
   # get a matrix of weights, zeros for missings
-  w_mat = (!is.na(as.matrix(data[assessments])) ) * 1 * w
+    # w2 stacks the normalized weights into a matrix 
+  w2 = matrix(w, ncol=ncol(data[assessments]), 
+              nrow=nrow(data[assessments]), byrow=TRUE)
+  
+  w_mat = (!is.na(as.matrix(data[assessments])) ) * 1 * w2
  
   w_mat_norm = w_mat / rowSums(w_mat)
   
@@ -799,13 +802,13 @@ equity_plot_multi = function(data,
 #     group="Race",
 #     reference_grp="Race=='White'",
 #     pathways = list(mypath=list(
-#         assessments="Z_CogAT_V",
+#         assessments=c("Z_CogAT_V", "Z_CogAT_Q"),
 #         nom="Z_CogAT_V",
 #         nom_cutoff=.8,
 #         test_cutoff=.9)),
 #     baseline_id_var="Gifted"
 # )
-# 
+
 # p
 # results = equity_plot_multi(data=mydata, #dat()
 #                             group=input$group,

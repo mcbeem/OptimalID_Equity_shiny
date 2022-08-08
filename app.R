@@ -203,6 +203,8 @@ ui <- fluidPage(
         
                fluidRow(
                  
+                 HTML("<br>"),
+                 
                  column(3, 
                         
                         selectizeInput(
@@ -422,7 +424,7 @@ ui <- fluidPage(
            
            HTML("<br>"),
            
-           plotOutput("plot", width="120%", height= "500px"),
+           plotOutput("plot", width="100%", height= "600px"),
            
           ) #closes column()
         
@@ -593,7 +595,7 @@ tabPanel("Pathway 2",
 
                   HTML("<br>"),
 
-                  plotOutput("plot2", width="120%", height= "500px"),
+                  plotOutput("plot2", width="100%", height= "600px"),
 
            ) #closes column()
 
@@ -763,7 +765,7 @@ tabPanel("Pathway 3",
                   
                   HTML("<br>"),
                   
-                  plotOutput("plot3", width="120%", height= "500px"),
+                  plotOutput("plot3", width="100%", height= "600px"),
                   
            ) #closes column()
            
@@ -933,7 +935,7 @@ tabPanel("Pathway 4",
                   
                   HTML("<br>"),
                   
-                  plotOutput("plot4", width="120%", height= "500px"),
+                  plotOutput("plot4", width="100%", height= "600px"),
                   
            ) #closes column()
            
@@ -961,7 +963,7 @@ tabPanel("All pathways",
                   
                   HTML("<br>"),
                   
-                  plotOutput("plot_all", width="120%", height= "500px"),
+                  plotOutput("plot_all", width="100%", height= "600px"),
                   
            ) #closes column()
            
