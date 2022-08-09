@@ -1062,12 +1062,6 @@ server <- function(input, output, session) {
   # initialize the 'dat' reactive object for holding the raw data
   dat <- reactiveVal()
   
-  # initialize 'grp_stats' reactive object, this holds the group descriptive statistics
-  grp_stats <- reactiveVal()
-  
-  # initialize 'metrics' reactive object, this holds the equity metric statistics
-  metrics <- reactiveVal()
-  
   # initialize the 'filters' reactive object
   filters <- reactiveValues(
     data_filter_string=NULL,
@@ -1160,12 +1154,6 @@ server <- function(input, output, session) {
       pathway_status$last_pathway = pathway_status$last_pathway - 1
     }
     
-    if (pathway_status$last_pathway == 1) {
-      shinyjs::show("Min pathways are 1")
-      pathway_status$add_btn_enabled = TRUE
-      pathway_status$remove_btn_enabled = FALSE
-    }
-    
     if (pathway_status$last_pathway < 4) {
       pathway_status$add_btn_enabled = TRUE
     }
@@ -1180,20 +1168,53 @@ server <- function(input, output, session) {
     } else {shinyjs::disable("btn_removePathway")}
     
     if (pathway_status$last_pathway == 1) {
+      
+      shinyjs::show("Min pathways are 1")
+      pathway_status$add_btn_enabled = TRUE
+      pathway_status$remove_btn_enabled = FALSE
+      
+      # hide tabs
       hideTab(inputId = "main", target = "Pathway 2")
       hideTab(inputId = "main", target = "Pathway 3")
       hideTab(inputId = "main", target = "Pathway 4")
       hideTab(inputId = "main", target = "All pathways")
+      
+      # remove descriptive statistics for removed pathways
+      tables$group_stats_2 <- NULL
+      tables$group_stats_3 <- NULL
+      tables$group_stats_4 <- NULL
+      
     }
     
     if (pathway_status$last_pathway == 2) {
+      
+      # hide tabs
       hideTab(inputId = "main", target = "Pathway 3")
       hideTab(inputId = "main", target = "Pathway 4")
+      
+      # remove descriptive statistics for removed pathways
+      tables$group_stats_3 <- NULL
+      tables$group_stats_4 <- NULL
     }
     
     if (pathway_status$last_pathway == 3) {
+      
+      # hide tabs
       hideTab(inputId = "main", target = "Pathway 4")
+      
+      # remove descriptive statistics for removed pathways
+      tables$group_stats_4 <- NULL
     }
+    
+    # build the integrated table of all the group statistics over the pathways
+    tables$group_stats = rbind(
+      tables$group_stats_1, 
+      tables$group_stats_2, 
+      tables$group_stats_3, 
+      tables$group_stats_4)
+    
+    # keep only the unique rows
+    tables$group_stats <- distinct(tables$group_stats)
     
   })  
   
@@ -1598,6 +1619,17 @@ server <- function(input, output, session) {
                                           
         )
         
+        # build the integrated table of all the group statistics over the pathways
+        tables$group_stats = rbind(
+          tables$group_stats_1, 
+          tables$group_stats_2, 
+          tables$group_stats_3, 
+          tables$group_stats_4)
+        
+        # keep only the unique rows
+        tables$group_stats <- distinct(tables$group_stats)
+        
+        
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1683,6 +1715,17 @@ server <- function(input, output, session) {
                                           vars=unique(c("meanscore2", input$assessments2, input$nom2)),
 
         )
+        
+        # build the integrated table of all the group statistics over the pathways
+        tables$group_stats = rbind(
+          tables$group_stats_1, 
+          tables$group_stats_2, 
+          tables$group_stats_3, 
+          tables$group_stats_4)
+        
+        # keep only the unique rows
+        tables$group_stats <- distinct(tables$group_stats)
+        
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1770,6 +1813,17 @@ server <- function(input, output, session) {
 
         )
         
+        # build the integrated table of all the group statistics over the pathways
+        tables$group_stats = rbind(
+          tables$group_stats_1, 
+          tables$group_stats_2, 
+          tables$group_stats_3, 
+          tables$group_stats_4)
+        
+        # keep only the unique rows
+        tables$group_stats <- distinct(tables$group_stats)
+        
+        
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
@@ -1855,6 +1909,17 @@ server <- function(input, output, session) {
                                           vars=unique(c("meanscore4", input$assessments4, input$nom4)),
 
         )
+        
+        # build the integrated table of all the group statistics over the pathways
+        tables$group_stats = rbind(
+          tables$group_stats_1, 
+          tables$group_stats_2, 
+          tables$group_stats_3, 
+          tables$group_stats_4)
+        
+        # keep only the unique rows
+        tables$group_stats <- distinct(tables$group_stats)
+        
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -2045,28 +2110,8 @@ server <- function(input, output, session) {
 # render descriptive statistics table -------------------------------------
   output$descr_table <- renderDataTable({
     
-    # note: this table is constructed in the render plot call
-    # clear descriptive statistics from discarded pathways
-    if (pathway_status$last_pathway == 1) {
-      tables$group_stats_2 <- NULL
-      tables$group_stats_3 <- NULL
-      tables$group_stats_4 <- NULL
-    } else if (pathway_status$last_pathway == 2) {
-      tables$group_stats_3 <- NULL
-      tables$group_stats_4 <- NULL
-    } else if (pathway_status$last_pathway == 3) {
-      tables$group_stats_4 <- NULL
-    }
-    
-    # build the integrated table of all the group statistics over the pathways
-    tables$group_stats = rbind(
-      tables$group_stats_1, 
-      tables$group_stats_2, 
-      tables$group_stats_3, 
-      tables$group_stats_4)
-    
-    # show the table, showing only unique rows
-    distinct(tables$group_stats)
+    # show the table
+    tables$group_stats
     
   }, filter="top")
   
