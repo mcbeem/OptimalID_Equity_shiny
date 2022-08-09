@@ -1056,9 +1056,17 @@ server <- function(input, output, session) {
     shinyjs::enable('loadFile')
   })
   
-  
-  # initialize the 'dat' reactive object
+
+# define reactive objects -------------------------------------------------
+
+  # initialize the 'dat' reactive object for holding the raw data
   dat <- reactiveVal()
+  
+  # initialize 'grp_stats' reactive object, this holds the group descriptive statistics
+  grp_stats <- reactiveVal()
+  
+  # initialize 'metrics' reactive object, this holds the equity metric statistics
+  metrics <- reactiveVal()
   
   # initialize the 'filters' reactive object
   filters <- reactiveValues(
@@ -1073,6 +1081,10 @@ server <- function(input, output, session) {
   # initialize the 'tables' reactive object
   tables <- reactiveValues(
     equity_table=NULL,
+    group_stats_1=NULL,
+    group_stats_2=NULL,
+    group_stats_3=NULL,
+    group_stats_4=NULL,
     group_stats=NULL,
   )
   
@@ -1101,7 +1113,8 @@ server <- function(input, output, session) {
     add_btn_enabled = TRUE,
     last_pathway = 1
   )
-  
+
+# define logic for adding / removing pathways -----------------------------
   
   observeEvent(input$btn_addPathway, {
     
@@ -1139,7 +1152,6 @@ server <- function(input, output, session) {
       showTab(inputId = "main", target = "Pathway 4")
     }
     
-    print(pathway_status$last_pathway)
   })
   
   observeEvent(input$btn_removePathway, {
@@ -1183,12 +1195,12 @@ server <- function(input, output, session) {
       hideTab(inputId = "main", target = "Pathway 4")
     }
     
-    print(pathway_status$last_pathway)
   })  
   
   
-  
-  # do the initial data loading when no filtering has been selected
+
+# do the initial data loading when no filtering has been selected ---------
+
   observeEvent(input$loadFile, {
     
     infile <- input$file
@@ -1212,8 +1224,9 @@ server <- function(input, output, session) {
       mydata 
     )
     
-    # store the loaded data in the reactive object
+    # store the loaded data in the reactive objects PPPP
     dat(mydata)
+  
     
     # add the datafile name to the reactive object (for display in the downloaded report)
     upload_dataname$filename = basename(infile$name)
@@ -1566,7 +1579,7 @@ server <- function(input, output, session) {
         
         # assign a new variable in the local environment only!
         #  (we don't want meanscore to appear as a variable for selection)
-        mydata$meanscore = identify_opti(data=mydata, 
+        mydata$meanscore1 = identify_opti(data=mydata, 
                                          assessments=input$assessments, 
                                          nom=input$nom, 
                                          nom_cutoff=input$nom_cutoff, 
@@ -1575,10 +1588,21 @@ server <- function(input, output, session) {
                                          mode = "meanscores", 
                                          weights = weights$w[1:length(input$assessments)])
         
+        
+        # construct the descriptive statistics table and load it into
+        #  the appropriate reactive element
+        tables$group_stats_1 <- descr_table(data=mydata,
+                                          group=group,
+                                          reference_grp=filter_string,
+                                          vars=unique(c("meanscore1", input$assessments, input$nom)),
+                                          
+        )
+        
+        
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
-        results = equity_plot_multi(data=mydata, #dat()
+        results = equity_plot_multi(data=mydata,
                                     group=input$group,
                                     reference_grp=filter_string,
                                     pathways=list(pathway_1 = list(
@@ -1653,17 +1677,17 @@ server <- function(input, output, session) {
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
-        # tables$group_stats <- descr_table(data=mydata,
-        #                                   group=group,
-        #                                   reference_grp=filter_string,
-        #                                   vars=unique(c("meanscore", input$assessments, input$nom)),
-        #                                   
-        # )
+        tables$group_stats_2 <- descr_table(data=mydata,
+                                          group=group,
+                                          reference_grp=filter_string,
+                                          vars=unique(c("meanscore2", input$assessments2, input$nom2)),
+
+        )
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
-        results = equity_plot_multi(data=mydata, #dat()
+        results = equity_plot_multi(data=mydata, 
                                     group=input$group,
                                     reference_grp=filter_string,
                                     pathways=list(pathway_2 = list(
@@ -1739,12 +1763,12 @@ server <- function(input, output, session) {
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
-        # tables$group_stats <- descr_table(data=mydata,
-        #                                   group=group,
-        #                                   reference_grp=filter_string,
-        #                                   vars=unique(c("meanscore", input$assessments, input$nom)),
-        #                                   
-        # )
+        tables$group_stats_3 <- descr_table(data=mydata,
+                                          group=group,
+                                          reference_grp=filter_string,
+                                          vars=unique(c("meanscore3", input$assessments3, input$nom3)),
+
+        )
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1825,12 +1849,12 @@ server <- function(input, output, session) {
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
-        # tables$group_stats <- descr_table(data=mydata,
-        #                                   group=group,
-        #                                   reference_grp=filter_string,
-        #                                   vars=unique(c("meanscore", input$assessments, input$nom)),
-        #                                   
-        # )
+        tables$group_stats_4 <- descr_table(data=mydata,
+                                          group=group,
+                                          reference_grp=filter_string,
+                                          vars=unique(c("meanscore4", input$assessments4, input$nom4)),
+
+        )
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1893,8 +1917,7 @@ server <- function(input, output, session) {
       # only render this plot if a group is selected, at least one of the 
       #   sets of assessments is supplied, and at least one of the nomination
       #   instruments is supplied
-      if (pathway_status$last_pathway >= 1 &
-          !is.null(group) & 
+      if (!is.null(group) & 
           (!is.null(input$assessments) | 
            !is.null(input$assessments2) |
            !is.null(input$assessments3) |
@@ -1913,14 +1936,6 @@ server <- function(input, output, session) {
         
         # assign a new variable in the local environment only!
         #  (we don't want meanscore to appear as a variable for selection)
-        mydata$meanscore = identify_opti(data=mydata, 
-                                         assessments=input$assessments, 
-                                         nom=input$nom, 
-                                         nom_cutoff=input$nom_cutoff, 
-                                         test_cutoff=input$mean_cutoff,
-                                         listwise=listwise$listwise,
-                                         mode = "meanscores", 
-                                         weights = weights$w[1:length(input$assessments)])
         
         pathways = append(pathways, list(pathway_1 = list(
           assessments=input$assessments,
@@ -1936,15 +1951,6 @@ server <- function(input, output, session) {
         if (pathway_status$last_pathway >= 2 & !is.null(input$assessments2) & 
             !is.null(input$nom2)) {
           
-          mydata$meanscore_2 = identify_opti(data=mydata, 
-                                             assessments=input$assessments2, 
-                                             nom=input$nom2, 
-                                             nom_cutoff=input$nom_cutoff2, 
-                                             test_cutoff=input$mean_cutoff2,
-                                             listwise=listwise$listwise,
-                                             mode = "meanscores", 
-                                             weights = weights$w2[1:length(input$assessments2)])
-          
           pathways = append(pathways, list(pathway_2 = list(
             assessments=input$assessments2,
             listwise=listwise$listwise2,
@@ -1959,15 +1965,6 @@ server <- function(input, output, session) {
         if (pathway_status$last_pathway >= 3 & !is.null(input$assessments3) & 
             !is.null(input$nom3)) {
           
-          mydata$meanscore_3 = identify_opti(data=mydata, 
-                                             assessments=input$assessments3, 
-                                             nom=input$nom3, 
-                                             nom_cutoff=input$nom_cutoff3, 
-                                             test_cutoff=input$mean_cutoff3,
-                                             listwise=listwise$listwise,
-                                             mode = "meanscores", 
-                                             weights = weights$w3[1:length(input$assessments3)])
-          
           pathways = append(pathways, list(pathway_3 = list(
             assessments=input$assessments3,
             listwise=listwise$listwise3,
@@ -1981,15 +1978,6 @@ server <- function(input, output, session) {
         
         if (pathway_status$last_pathway >= 4 & !is.null(input$assessments4) & 
             !is.null(input$nom)) {
-          
-          mydata$meanscore_4 = identify_opti(data=mydata, 
-                                             assessments=input$assessments4, 
-                                             nom=input$nom4, 
-                                             nom_cutoff=input$nom_cutoff4, 
-                                             test_cutoff=input$mean_cutoff4,
-                                             listwise=listwise$listwise,
-                                             mode = "meanscores", 
-                                             weights = weights$w4[1:length(input$assessments4)])
           
           pathways = append(pathways, list(pathway_4 = list(
             assessments=input$assessments4,
@@ -2011,16 +1999,6 @@ server <- function(input, output, session) {
                                     selected_pathway=length(pathways)+1
         )
         
-        # construct the descriptive statistics table and load it into
-        #  the appropriate reactive element
-        tables$group_stats <- descr_table(data=mydata,
-                                          group=group,
-                                          reference_grp=filter_string,
-                                          vars=unique(c(names(mydata)[grep("meanscore", names(mydata))],
-                                                        input$assessments, input$nom,
-                                                        input$assessments2, input$nom2,
-                                                        input$assessments3, input$nom3,
-                                                        input$assessments4, input$nom4)))
     
     # # process the equity table - format for display
     # tbl_long = results$summary_tbl
@@ -2062,10 +2040,33 @@ server <- function(input, output, session) {
     
   }, filter="top")
   
+  
+
+# render descriptive statistics table -------------------------------------
   output$descr_table <- renderDataTable({
     
     # note: this table is constructed in the render plot call
-    tables$group_stats
+    # clear descriptive statistics from discarded pathways
+    if (pathway_status$last_pathway == 1) {
+      tables$group_stats_2 <- NULL
+      tables$group_stats_3 <- NULL
+      tables$group_stats_4 <- NULL
+    } else if (pathway_status$last_pathway == 2) {
+      tables$group_stats_3 <- NULL
+      tables$group_stats_4 <- NULL
+    } else if (pathway_status$last_pathway == 3) {
+      tables$group_stats_4 <- NULL
+    }
+    
+    # build the integrated table of all the group statistics over the pathways
+    tables$group_stats = rbind(
+      tables$group_stats_1, 
+      tables$group_stats_2, 
+      tables$group_stats_3, 
+      tables$group_stats_4)
+    
+    # show the table, showing only unique rows
+    distinct(tables$group_stats)
     
   }, filter="top")
   
