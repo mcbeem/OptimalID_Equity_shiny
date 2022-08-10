@@ -1074,6 +1074,10 @@ server <- function(input, output, session) {
   
   # initialize the 'tables' reactive object
   tables <- reactiveValues(
+    equity_table_1=NULL,
+    equity_table_2=NULL,
+    equity_table_3=NULL,
+    equity_table_4=NULL,
     equity_table=NULL,
     group_stats_1=NULL,
     group_stats_2=NULL,
@@ -1546,13 +1550,6 @@ server <- function(input, output, session) {
       choices = variable_names())
   })
   
-  observe({
-    updateSelectInput(
-      session = session, 
-      inputId = "assessments", 
-      choices = variable_names())
-  })
-  
   
   # this runs when the group box is touched
   observe({
@@ -1627,9 +1624,9 @@ server <- function(input, output, session) {
           tables$group_stats_4)
         
         # keep only the unique rows
-        tables$group_stats <- distinct(tables$group_stats)
-        
-        
+        # for some reason, the following line can lead to an infinite loop under some conditions
+        # tables$group_stats <- distinct(tables$group_stats)
+      
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1673,8 +1670,21 @@ server <- function(input, output, session) {
                                     decreasing=TRUE, na.last=FALSE),]
         }
         
+        # use the pathway name if it was given
+        if (input$lbl_pathway1 != "") {
+          tbl_wide = mutate(tbl_wide, comparison = 
+                              replace(comparison, comparison=='opti_pathway_1', input$lbl_pathway1))
+        }
+        
         # load the table into the reactive object for display and download
-        tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        tables$equity_table_1 = dplyr::select(tbl_wide, -baseline)
+        
+        # build the integrated table of all the group statistics over the pathways
+        tables$equity_table = rbind(
+          tables$equity_table_1, 
+          tables$equity_table_2, 
+          tables$equity_table_3, 
+          tables$equity_table_4)
         
         # show the plot
         return(results$p)
@@ -1718,14 +1728,14 @@ server <- function(input, output, session) {
         
         # build the integrated table of all the group statistics over the pathways
         tables$group_stats = rbind(
-          tables$group_stats_1, 
-          tables$group_stats_2, 
-          tables$group_stats_3, 
+          tables$group_stats_1,
+          tables$group_stats_2,
+          tables$group_stats_3,
           tables$group_stats_4)
-        
+
         # keep only the unique rows
-        tables$group_stats <- distinct(tables$group_stats)
-        
+        #tables$group_stats <- distinct(tables$group_stats)
+
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1746,32 +1756,45 @@ server <- function(input, output, session) {
                                     selected_pathway=1
         )
         
-        # # process the equity table - format for display
-        # tbl_long = results$summary_tbl
-        # 
-        # tbl_long$value = round(tbl_long$value, 3)
-        # 
-        # tbl_wide = pivot_wider(
-        #   dplyr::filter(tbl_long, metric %in% 
-        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
-        #   names_from=c("metric"))
-        # 
-        # if (length(group) == 1) {
-        #   
-        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-        #                             tbl_wide$comparison,
-        #                             decreasing=TRUE, na.last=FALSE),]
-        # } else if (length(group) == 2) {
-        #   
-        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-        #                             tbl_wide[[group[2]]],
-        #                             tbl_wide$comparison,
-        #                             decreasing=TRUE, na.last=FALSE),]
-        # }
-        # 
-        # # load the table into the reactive object for display and download
-        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
-        
+        # process the equity table - format for display
+        tbl_long = results$summary_tbl
+
+        tbl_long$value = round(tbl_long$value, 3)
+
+        tbl_wide = pivot_wider(
+          dplyr::filter(tbl_long, metric %in%
+                          c("count", "pct_identified", "RI", "RR", "CramerV")),
+          names_from=c("metric"))
+
+        if (length(group) == 1) {
+
+          tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                                    tbl_wide$comparison,
+                                    decreasing=TRUE, na.last=FALSE),]
+        } else if (length(group) == 2) {
+
+          tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                                    tbl_wide[[group[2]]],
+                                    tbl_wide$comparison,
+                                    decreasing=TRUE, na.last=FALSE),]
+        }
+
+        # use the pathway name if it was given
+        if (input$lbl_pathway2 != "") {
+          tbl_wide = mutate(tbl_wide, comparison =
+                              replace(comparison, comparison=='opti_pathway_2', input$lbl_pathway2))
+        }
+
+        # load the table into the reactive object for display and download
+        tables$equity_table_2 = dplyr::select(tbl_wide, -baseline)
+
+        # build the integrated table of all the group statistics over the pathways
+        tables$equity_table = rbind(
+          tables$equity_table_1,
+          tables$equity_table_2,
+          tables$equity_table_3,
+          tables$equity_table_4)
+
         # show the plot
         return(results$p)
         
@@ -1821,7 +1844,7 @@ server <- function(input, output, session) {
           tables$group_stats_4)
         
         # keep only the unique rows
-        tables$group_stats <- distinct(tables$group_stats)
+        #tables$group_stats <- distinct(tables$group_stats)
         
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
@@ -1844,31 +1867,44 @@ server <- function(input, output, session) {
         )
         
         
-        # # process the equity table - format for display
-        # tbl_long = results$summary_tbl
-        # 
-        # tbl_long$value = round(tbl_long$value, 3)
-        # 
-        # tbl_wide = pivot_wider(
-        #   dplyr::filter(tbl_long, metric %in% 
-        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
-        #   names_from=c("metric"))
-        # 
-        # if (length(group) == 1) {
-        #   
-        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-        #                             tbl_wide$comparison,
-        #                             decreasing=TRUE, na.last=FALSE),]
-        # } else if (length(group) == 2) {
-        #   
-        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-        #                             tbl_wide[[group[2]]],
-        #                             tbl_wide$comparison,
-        #                             decreasing=TRUE, na.last=FALSE),]
-        # }
-        # 
-        # # load the table into the reactive object for display and download
-        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        # process the equity table - format for display
+        tbl_long = results$summary_tbl
+
+        tbl_long$value = round(tbl_long$value, 3)
+
+        tbl_wide = pivot_wider(
+          dplyr::filter(tbl_long, metric %in%
+                          c("count", "pct_identified", "RI", "RR", "CramerV")),
+          names_from=c("metric"))
+
+        if (length(group) == 1) {
+
+          tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                                    tbl_wide$comparison,
+                                    decreasing=TRUE, na.last=FALSE),]
+        } else if (length(group) == 2) {
+
+          tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                                    tbl_wide[[group[2]]],
+                                    tbl_wide$comparison,
+                                    decreasing=TRUE, na.last=FALSE),]
+        }
+
+        # use the pathway name if it was given
+        if (input$lbl_pathway3 != "") {
+          tbl_wide = mutate(tbl_wide, comparison =
+                              replace(comparison, comparison=='opti_pathway_3', input$lbl_pathway3))
+        }
+        
+        # load the table into the reactive object for display and download
+        tables$equity_table_3 = dplyr::select(tbl_wide, -baseline)
+        
+        # build the integrated table of all the group statistics over the pathways
+        tables$equity_table = rbind(
+          tables$equity_table_1,
+          tables$equity_table_2,
+          tables$equity_table_3,
+          tables$equity_table_4)
         
         # show the plot
         return(results$p)
@@ -1918,7 +1954,7 @@ server <- function(input, output, session) {
           tables$group_stats_4)
         
         # keep only the unique rows
-        tables$group_stats <- distinct(tables$group_stats)
+        #tables$group_stats <- distinct(tables$group_stats)
         
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
@@ -1941,31 +1977,44 @@ server <- function(input, output, session) {
         )
         
         
-        # # process the equity table - format for display
-        # tbl_long = results$summary_tbl
-        # 
-        # tbl_long$value = round(tbl_long$value, 3)
-        # 
-        # tbl_wide = pivot_wider(
-        #   dplyr::filter(tbl_long, metric %in% 
-        #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
-        #   names_from=c("metric"))
-        # 
-        # if (length(group) == 1) {
-        #   
-        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-        #                             tbl_wide$comparison,
-        #                             decreasing=TRUE, na.last=FALSE),]
-        # } else if (length(group) == 2) {
-        #   
-        #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-        #                             tbl_wide[[group[2]]],
-        #                             tbl_wide$comparison,
-        #                             decreasing=TRUE, na.last=FALSE),]
-        # }
-        # 
-        # # load the table into the reactive object for display and download
-        # tables$equity_table = dplyr::select(tbl_wide, -baseline)
+        # process the equity table - format for display
+        tbl_long = results$summary_tbl
+
+        tbl_long$value = round(tbl_long$value, 3)
+
+        tbl_wide = pivot_wider(
+          dplyr::filter(tbl_long, metric %in%
+                          c("count", "pct_identified", "RI", "RR", "CramerV")),
+          names_from=c("metric"))
+
+        if (length(group) == 1) {
+
+          tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                                    tbl_wide$comparison,
+                                    decreasing=TRUE, na.last=FALSE),]
+        } else if (length(group) == 2) {
+
+          tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                                    tbl_wide[[group[2]]],
+                                    tbl_wide$comparison,
+                                    decreasing=TRUE, na.last=FALSE),]
+        }
+
+        # use the pathway name if it was given
+        if (input$lbl_pathway4 != "") {
+          tbl_wide = mutate(tbl_wide, comparison =
+                              replace(comparison, comparison=='opti_pathway_4', input$lbl_pathway4))
+        }
+        
+        # load the table into the reactive object for display and download
+        tables$equity_table_4 = dplyr::select(tbl_wide, -baseline)
+        
+        # build the integrated table of all the group statistics over the pathways
+        tables$equity_table = rbind(
+          tables$equity_table_1,
+          tables$equity_table_2,
+          tables$equity_table_3,
+          tables$equity_table_4)
         
         # show the plot
         return(results$p)
@@ -2101,7 +2150,8 @@ server <- function(input, output, session) {
   output$tbl <- DT::renderDataTable({
     
     # note: this table is constructed in the render plot call
-    tables$equity_table
+    # display the unique rows
+    distinct(tables$equity_table)
     
   }, filter="top")
   
@@ -2111,7 +2161,8 @@ server <- function(input, output, session) {
   output$descr_table <- renderDataTable({
     
     # show the table
-    tables$group_stats
+    # display the unique rows
+    distinct(tables$group_stats)
     
   }, filter="top")
   
