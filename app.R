@@ -233,10 +233,14 @@ ui <- fluidPage(
                                   )
                                 ),
                                 
-                                selectInput(
+                                # using a hack here to avoid the box pre-populating with the 
+                                #  first column name in the data
+                                selectizeInput(
                                   inputId = "baseline_id_var", 
                                   label = "Baseline id variable", 
-                                  choices = NULL
+                                  choices = NULL,
+                                  multiple = TRUE,
+                                  options=list(maxItems=1)
                                 ),
                                 
                                 helpText("(don't turn this off unless you really know what you are doing)"),
@@ -961,9 +965,7 @@ ui <- fluidPage(
                          
                          HTML("<br>"),
                          
-                         column(3),
-                         
-                         column(9,
+                         column(12,
                                 
                                 selectInput(
                                   inputId = "metric_all",
@@ -1099,6 +1101,14 @@ server <- function(input, output, session) {
     listwise=FALSE
   )
   
+  # initialize the 'pathway_names' reactive object
+  pathway_names <- reactiveValues(
+    pathway_name1 = "Pathway1",
+    pathway_name2 = "Pathway2",
+    pathway_name3 = "Pathway3",
+    pathway_name4 = "Pathway4"
+  )
+  
   # initialize the 'upload_dataname' reactive object
   upload_dataname <- reactiveValues(
     filename=NULL
@@ -1150,6 +1160,30 @@ server <- function(input, output, session) {
       showTab(inputId = "main", target = "Pathway 4")
     }
     
+    # build the integrated table of all the group statistics over the pathways
+    tables$group_stats = rbind(
+      tables$group_stats_1, 
+      tables$group_stats_2, 
+      tables$group_stats_3, 
+      tables$group_stats_4)
+    
+    # keep only the unique rows of the group stats table avoiding error if the table is NULL
+    if (!is.null(tables$group_stats)) {
+      tables$group_stats <- distinct(tables$group_stats)
+    }
+    
+    # build the integrated table of all the equity tables over the pathways
+    tables$equity_table = rbind(
+      tables$equity_table_1, 
+      tables$equity_table_2, 
+      tables$equity_table_3, 
+      tables$equity_table_4)
+    
+    # keep only the unique rows of the equity table, avoiding failure if the table is NULL
+    if (!is.null(tables$equity_table)) {
+      tables$equity_table <- distinct(tables$equity_table)
+    }
+    
   })
   
   observeEvent(input$btn_removePathway, {
@@ -1188,6 +1222,11 @@ server <- function(input, output, session) {
       tables$group_stats_3 <- NULL
       tables$group_stats_4 <- NULL
       
+      # remove equity statistics for removed pathways
+      tables$equity_table_2 <- NULL
+      tables$equity_table_3 <- NULL
+      tables$equity_table_4 <- NULL
+      
     }
     
     if (pathway_status$last_pathway == 2) {
@@ -1199,6 +1238,10 @@ server <- function(input, output, session) {
       # remove descriptive statistics for removed pathways
       tables$group_stats_3 <- NULL
       tables$group_stats_4 <- NULL
+      
+      # remove equity statistics for removed pathways
+      tables$equity_table_3 <- NULL
+      tables$equity_table_4 <- NULL
     }
     
     if (pathway_status$last_pathway == 3) {
@@ -1208,6 +1251,9 @@ server <- function(input, output, session) {
       
       # remove descriptive statistics for removed pathways
       tables$group_stats_4 <- NULL
+      
+      # remove equity statistics for removed pathways
+      tables$equity_table_4 <- NULL
     }
     
     # build the integrated table of all the group statistics over the pathways
@@ -1217,8 +1263,22 @@ server <- function(input, output, session) {
       tables$group_stats_3, 
       tables$group_stats_4)
     
-    # keep only the unique rows
-    tables$group_stats <- distinct(tables$group_stats)
+    # keep only the unique rows, avoiding an error if the table is NULL
+    if (!is.null(tables$egroup_stats)) {
+      tables$group_stats <- distinct(tables$group_stats)
+    }
+    
+    # build the integrated table of all the equity tables over the pathways
+    tables$equity_table = rbind(
+      tables$equity_table_1, 
+      tables$equity_table_2, 
+      tables$equity_table_3, 
+      tables$equity_table_4)
+    
+    # keep only the unique rows, avoiding an error if the table is NULL
+    if (!is.null(tables$equity_table)) {
+      tables$equity_table <- distinct(tables$equity_table)
+    }
     
   })  
   
@@ -1622,12 +1682,7 @@ server <- function(input, output, session) {
           tables$group_stats_2, 
           tables$group_stats_3, 
           tables$group_stats_4)
-        
-        # keep only the unique rows
-        # for some reason, the following line can lead to an infinite loop under some conditions
-        # tables$group_stats <- distinct(tables$group_stats)
-      
-        
+  
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
@@ -1733,10 +1788,6 @@ server <- function(input, output, session) {
           tables$group_stats_3,
           tables$group_stats_4)
 
-        # keep only the unique rows
-        #tables$group_stats <- distinct(tables$group_stats)
-
-        
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
@@ -1788,7 +1839,7 @@ server <- function(input, output, session) {
         # load the table into the reactive object for display and download
         tables$equity_table_2 = dplyr::select(tbl_wide, -baseline)
 
-        # build the integrated table of all the group statistics over the pathways
+        # build the integrated table of all the equity tables over the pathways
         tables$equity_table = rbind(
           tables$equity_table_1,
           tables$equity_table_2,
@@ -1836,16 +1887,12 @@ server <- function(input, output, session) {
 
         )
         
-        # build the integrated table of all the group statistics over the pathways
+        # build the integrated table of all the equity tables over the pathways
         tables$group_stats = rbind(
           tables$group_stats_1, 
           tables$group_stats_2, 
           tables$group_stats_3, 
           tables$group_stats_4)
-        
-        # keep only the unique rows
-        #tables$group_stats <- distinct(tables$group_stats)
-        
         
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
@@ -1899,7 +1946,7 @@ server <- function(input, output, session) {
         # load the table into the reactive object for display and download
         tables$equity_table_3 = dplyr::select(tbl_wide, -baseline)
         
-        # build the integrated table of all the group statistics over the pathways
+        # build the integrated table of all the equity tables over the pathways
         tables$equity_table = rbind(
           tables$equity_table_1,
           tables$equity_table_2,
@@ -1953,10 +2000,6 @@ server <- function(input, output, session) {
           tables$group_stats_3, 
           tables$group_stats_4)
         
-        # keep only the unique rows
-        #tables$group_stats <- distinct(tables$group_stats)
-        
-        
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
@@ -2009,7 +2052,7 @@ server <- function(input, output, session) {
         # load the table into the reactive object for display and download
         tables$equity_table_4 = dplyr::select(tbl_wide, -baseline)
         
-        # build the integrated table of all the group statistics over the pathways
+        # build the integrated table of all the equity tables over the pathways
         tables$equity_table = rbind(
           tables$equity_table_1,
           tables$equity_table_2,
@@ -2113,33 +2156,6 @@ server <- function(input, output, session) {
                                     selected_pathway=length(pathways)+1
         )
         
-    
-    # # process the equity table - format for display
-    # tbl_long = results$summary_tbl
-    # 
-    # tbl_long$value = round(tbl_long$value, 3)
-    # 
-    # tbl_wide = pivot_wider(
-    #   dplyr::filter(tbl_long, metric %in% 
-    #                   c("count", "pct_identified", "RI", "RR", "CramerV")), 
-    #   names_from=c("metric"))
-    # 
-    # if (length(group) == 1) {
-    #   
-    #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-    #                             tbl_wide$comparison,
-    #                             decreasing=TRUE, na.last=FALSE),]
-    # } else if (length(group) == 2) {
-    #   
-    #   tbl_wide = tbl_wide[order(tbl_wide[[group[1]]], 
-    #                             tbl_wide[[group[2]]],
-    #                             tbl_wide$comparison,
-    #                             decreasing=TRUE, na.last=FALSE),]
-    # }
-    # 
-    # # load the table into the reactive object for display and download
-    # tables$equity_table = dplyr::select(tbl_wide, -baseline)
-    
     # show the plot
     return(results$p)
     
@@ -2151,7 +2167,11 @@ server <- function(input, output, session) {
     
     # note: this table is constructed in the render plot call
     # display the unique rows
-    distinct(tables$equity_table)
+    # the if statement prevents an error message appearing in the app
+    #  if the table hasn't yet been constructed
+    if (!is.null(tables$equity_table)) {
+      distinct(tables$equity_table)
+    }
     
   }, filter="top")
   
@@ -2162,7 +2182,11 @@ server <- function(input, output, session) {
     
     # show the table
     # display the unique rows
-    distinct(tables$group_stats)
+    # the if statement prevents an error message appearing in the app
+    #  if the table hasn't yet been constructed
+    if (!is.null(tables$group_stats)) {
+      distinct(tables$group_stats)
+    }
     
   }, filter="top")
   
@@ -2199,11 +2223,32 @@ output$report <- downloadHandler(
       reference_grp1=input$reference_grp1,
       reference_grp2=input$reference_grp2,
       group_filter_string=filters$group_filter_string,
+      
       assessments=input$assessments,
+      assessments2=input$assessments2,
+      assessments3=input$assessments3,
+      assessments4=input$assessments4,
+      
       weights=weights$w[1: length(input$assessments)],
+      weights2=weights$w2[1: length(input$assessments2)],
+      weights3=weights$w3[1: length(input$assessments3)],
+      weights4=weights$w4[1: length(input$assessments4)],
+      
       nom=input$nom,
+      nom2=input$nom2,
+      nom3=input$nom3,
+      nom4=input$nom4,
+      
       nom_cutoff=input$nom_cutoff,
+      nom_cutoff2=input$nom_cutoff2,
+      nom_cutoff3=input$nom_cutoff3,
+      nom_cutoff4=input$nom_cutoff4,
+      
       mean_cutoff=input$mean_cutoff,
+      mean_cutoff2=input$mean_cutoff2,
+      mean_cutoff3=input$mean_cutoff3,
+      mean_cutoff4=input$mean_cutoff4,
+      
       baseline_id_var=input$baseline_id_var,
       equity_tbl=tables$equity_table,
       group_stats_tbl=tables$group_stats)
