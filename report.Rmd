@@ -17,11 +17,40 @@ params:
   group: NA
   reference_grp1: NA
   reference_grp2: NA
+  
+  last_pathway: NA
+  listwise: NA
+  
+  pathway_name: NA
+  pathway_name2: NA
+  pathway_name3: NA
+  pathway_name4: NA
+  
   assessments: NA
+  assessments2: NA
+  assessments3: NA
+  assessments4: NA
+  
   weights: NA
+  weights2: NA
+  weights3: NA
+  weights4: NA
+  
   nom: NA
+  nom2: NA
+  nom3: NA
+  nom4: NA
+  
   nom_cutoff: NA
+  nom_cutoff2: NA
+  nom_cutoff3: NA
+  nom_cutoff4: NA
+  
   mean_cutoff: NA
+  mean_cutoff2: NA
+  mean_cutoff3: NA
+  mean_cutoff4: NA
+  
   baseline_id_var: NA
   equity_tbl: NA
   group_stats_tbl: NA
@@ -154,62 +183,130 @@ settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
 
 
 ```{r, warnings=FALSE}
-params$equity_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
-  caption = 'Table 2: Population size and equity metrics',
-  autonum = NULL,
-  style = "Table Caption",
-  html_escape = TRUE
-) %>% fit_to_width(7)
+
+if (!is.null(params$equity_tbl)) {
+
+  params$equity_tbl %>% distinct() %>% arrange(comparison) %>% flextable() %>% autofit() %>% 
+    theme_zebra() %>% set_caption(
+    caption = 'Table 2: Population size and equity metrics',
+    autonum = NULL,
+    style = "Table Caption",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
 ```
 
 <br>
 
 ```{r}
-params$group_stats_tbl %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
-  caption = 'Table 3: Assessment descriptive statistics by group',
-  autonum = NULL,
-  style = "Table Caption",
-  html_escape = TRUE
-) %>% fit_to_width(7)
+
+if (!is.null(params$group_stats_tbl)) {
+  
+  params$group_stats_tbl %>% distinct() %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
+    caption = 'Table 3: Assessment descriptive statistics by group',
+    autonum = NULL,
+    style = "Table Caption",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
 ```
 
 <!-- -->
 
 
 ```{r}
-
-metrics = c("Count", "Representation Index", "Proportion Identified", 
-                        "Relative Risk")
-
-plots = lapply(metrics, equity_plot, data=params$data,
-                    group=params$group,
-                    reference_grp=params$group_filter_string,
-                    assessments=params$assessments,
-                    nom=params$nom,
-                    nom_cutoff=params$nom_cutoff,
-                    mean_cutoff=params$mean_cutoff,
-                    baseline_id_var=params$baseline_id_var)
-
-plots[[1]]$p
+# 
+# metrics = c("Count", "Representation Index", "Proportion Identified", 
+#                         "Relative Risk")
+# 
+# pathways = list()
+# 
+# pathways = append(pathways, list(pathway_1 = list(
+#     assessments=params$assessments,
+#     listwise=params$listwise,
+#     nom=params$nom,
+#     nom_cutoff=params$nom_cutoff,
+#     test_cutoff=params$mean_cutoff,
+#     weights=weights$w[1:length(params$assessments)])
+# )
+# )
+# 
+# 
+# if (pathway_status$last_pathway >= 2 & !is.null(params$assessments2) & 
+#     !is.null(params$nom2)) {
+#     
+#     pathways = append(pathways, list(pathway_2 = list(
+#         assessments=params$assessments2,
+#         listwise=params$listwise,
+#         nom=params$nom2,
+#         nom_cutoff=params$nom_cutoff2,
+#         test_cutoff=params$mean_cutoff2,
+#         weights=weights$w2[1:length(params$assessments2)])
+#     )
+#     )
+# }
+# 
+# if (pathway_status$last_pathway >= 3 & !is.null(params$assessments3) & 
+#     !is.null(params$nom3)) {
+#     
+#     pathways = append(pathways, list(pathway_3 = list(
+#         assessments=params$assessments3,
+#         listwise=params$listwise,
+#         nom=params$nom3,
+#         nom_cutoff=params$nom_cutoff3,
+#         test_cutoff=params$mean_cutoff3,
+#         weights=weights$w3[1:length(params$assessments3)])
+#     )
+#     )
+# }
+# 
+# if (pathway_status$last_pathway >= 4 & !is.null(params$assessments4) & 
+#     !is.null(params$nom)) {
+#     
+#     pathways = append(pathways, list(pathway_4 = list(
+#         assessments=params$assessments4,
+#         listwise=params$listwise,
+#         nom=params$nom4,
+#         nom_cutoff=params$nom_cutoff4,
+#         test_cutoff=params$mean_cutoff4,
+#         weights=weights$w4[1:length(params$assessments4)])
+#     )
+#     )
+# }
+# 
+# plots = lapply(metrics, equity_plot_multi,
+#                group=params$group,
+#               reference_grp=params$group_filter_string,
+#               pathways=pathways,
+#               assessments=params$assessments,
+#               nom=params$nom,
+#               nom_cutoff=params$nom_cutoff,
+#               mean_cutoff=params$mean_cutoff,
+#               baseline_id_var=params$baseline_id_var,
+#               selected_pathway=1) #length(pathways)+1
+#         
+# plots[[1]]$p
 
 ```
 
 <br>
 
 ```{r}
-plots[[2]]$p
+# plots[[2]]$p
 ```
 
 <br>
 
 ```{r}
-plots[[3]]$p
+# plots[[3]]$p
 ```
 
 <br>
 
 ```{r}
-plots[[4]]$p
+# plots[[4]]$p
 ```
 
 

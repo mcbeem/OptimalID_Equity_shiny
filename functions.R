@@ -826,3 +826,40 @@ equity_plot_multi = function(data,
 #                             selected_pathway=input$pathway
 # )
 
+process_equity_tbl <- function(tbl, group, pathway_lbl, pathway_num) {
+  
+  # process the equity table - format for display
+  tbl_long = tbl
+  
+  tbl_long$value = round(tbl_long$value, 3)
+  
+  tbl_wide = pivot_wider(
+    dplyr::filter(tbl_long, metric %in%
+                    c("count", "pct_identified", "RI", "RR", "CramerV")),
+    names_from=c("metric"))
+  
+  if (length(group) == 1) {
+    
+    tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                              tbl_wide$comparison,
+                              decreasing=TRUE, na.last=FALSE),]
+  } else if (length(group) == 2) {
+    
+    tbl_wide = tbl_wide[order(tbl_wide[[group[1]]],
+                              tbl_wide[[group[2]]],
+                              tbl_wide$comparison,
+                              decreasing=TRUE, na.last=FALSE),]
+  }
+  
+  # use the pathway name if it was given
+  if (!is.null(pathway_lbl)) {
+    if (pathway_lbl != "") {
+      tbl_wide = mutate(tbl_wide, comparison =
+                          replace(comparison, comparison==paste0('opti_pathway_', pathway_num), 
+                                  pathway_lbl))
+    }
+  }
+  
+  return(dplyr::select(tbl_wide, -baseline))
+
+}
