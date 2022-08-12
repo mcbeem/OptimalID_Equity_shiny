@@ -52,7 +52,6 @@ params:
   mean_cutoff4: NA
   
   baseline_id_var: NA
-  equity_tbl: NA
   group_stats_tbl: NA
 
 ---
@@ -144,82 +143,8 @@ if (!is.null(params$group)) {
 
 
 ```{r}
-settings_tbl = data.frame(
-  Parameter = c('Uploaded file', 
-                'Data filtering', 
-                'Group(s) selected for equity analysis',
-                'Reference equity group',
-                'Baseline identification indicator variable name',
-                'Nomination (phase-1) assessment',
-                'Nomination (phase-1) percentile cutoff',
-                'Phase-2 assessments',
-                'Phase-2 assessment weights',
-                'Phase-2 percentile cutoff'),
-  Setting = c(params$file, 
-              toString(data_filter_string),
-              toString(params$group),
-              toString(filter_string),
-              params$baseline_id_var,
-              params$nom,
-              toString(round(params$nom_cutoff, 3)),
-              toString(params$assessments),
-              toString(paste0(round(params$weights, 3))),
-              round(params$mean_cutoff, 3)
-  ))
-              
-              
-              
-
-settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
-  caption = 'Table 1: Settings',
-  autonum = run_autonum(),
-  style = "paragraph",
-  html_escape = TRUE
-) %>% fit_to_width(7)
-
-```
-
-<br>
-
-
-```{r, warnings=FALSE}
-
-if (!is.null(params$equity_tbl)) {
-
-  params$equity_tbl %>% distinct() %>% arrange(comparison) %>% flextable() %>% autofit() %>% 
-    theme_zebra() %>% set_caption(
-    caption = 'Table 2: Population size and equity metrics',
-    autonum = NULL,
-    style = "Table Caption",
-    html_escape = TRUE
-  ) %>% fit_to_width(7)
-  
-}
-```
-
-<br>
-
-```{r}
-
-if (!is.null(params$group_stats_tbl)) {
-  
-  params$group_stats_tbl %>% distinct() %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
-    caption = 'Table 3: Assessment descriptive statistics by group',
-    autonum = NULL,
-    style = "Table Caption",
-    html_escape = TRUE
-  ) %>% fit_to_width(7)
-  
-}
-```
-
-<!-- -->
-
-
-```{r}
-
-metrics = c("Count", "Representation Index", "Proportion Identified",
-                        "Relative Risk")
+# construct the pathways from the input, used to construct the equity statistics table
+#  and the plots
 
 pathways = list()
 
@@ -275,13 +200,143 @@ if (params$last_pathway >= 4 & !is.null(params$assessments4) &
     )
     )
 }
+```
+
+
+
+```{r}
+settings_tbl = data.frame(
+  Parameter = c('Uploaded file', 
+                'Data filtering', 
+                'Group(s) selected for equity analysis',
+                'Reference equity group',
+                'Baseline identification indicator variable name',
+                'Nomination (phase-1) assessment',
+                'Nomination (phase-1) percentile cutoff',
+                'Phase-2 assessments',
+                'Phase-2 assessment weights',
+                'Phase-2 percentile cutoff'),
+  Setting = c(params$file, 
+              toString(data_filter_string),
+              toString(params$group),
+              toString(filter_string),
+              params$baseline_id_var,
+              params$nom,
+              toString(round(params$nom_cutoff, 3)),
+              toString(params$assessments),
+              toString(paste0(round(params$weights, 3))),
+              round(params$mean_cutoff, 3)
+  ))
+              
+              
+              
+
+settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+  caption = 'Table 1: Settings',
+  autonum = run_autonum(),
+  style = "paragraph",
+  html_escape = TRUE
+) %>% fit_to_width(7)
+
+```
+
+<br>
+
+
+```{r, warnings=FALSE}
+
+
+if (!is.null(params$group) & 
+        (!is.null(params$assessments) | 
+         !is.null(params$assessments2) |
+         !is.null(params$assessments3) |
+         !is.null(params$assessments4) ) &
+        (!is.null(params$nom) |
+         !is.null(params$nom2) |
+         !is.null(params$nom3) |
+         !is.null(params$nom4)) ) {
+  
+  results = list()
+      
+  pathway_label_list = list(
+      params$pathway_name,
+      params$pathway_name2,
+      params$pathway_name3,
+      params$pathway_name4
+  )
+  
+  
+  for (i in 1:(length(pathways)+1)) {
+    
+    this_result = equity_plot_multi(data=params$data, 
+                                group=params$group,
+                                reference_grp=params$group_filter_string,
+                                pathways=pathways,
+                                baseline_id_var=params$baseline_id_var,
+                                plot_metric='Count',
+                                selected_pathway=i)$summary_tbl
+    
+    if (i < (length(pathways)+1)) {
+      results[[i]] = process_equity_tbl(tbl=this_result,
+                                        group=params$group,
+                                        pathway_lbl=pathway_label_list[[i]], 
+                                        pathway_num=i) 
+    } else {
+     
+      if (length(pathways) > 1) {
+        results[[i]] = process_equity_tbl(tbl=this_result,
+                                          group=params$group,
+                                          pathway_lbl="All pathways", 
+                                          pathway_num=i) 
+      }
+    }
+  }
+
+  equity_table = do.call('rbind', results)
+
+  equity_table %>% distinct() %>% arrange(comparison) %>% flextable() %>% autofit() %>% 
+    theme_zebra() %>% set_caption(
+    caption = 'Table 2: Population size and equity metrics',
+    autonum = NULL,
+    style = "Table Caption",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+    
+}
+
+```
+
+<br>
+
+```{r}
+
+if (!is.null(params$group_stats_tbl)) {
+  
+  params$group_stats_tbl %>% distinct() %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
+    caption = 'Table 3: Assessment descriptive statistics by group',
+    autonum = NULL,
+    style = "Table Caption",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
+```
+
+<!-- -->
+
+
+```{r}
+
+metrics = c("Count", "Representation Index", "Proportion Identified",
+                        "Relative Risk")
 
 plots = lapply(metrics, equity_plot_multi,
+              data=params$data,
               group=params$group,
               reference_grp=params$group_filter_string,
               pathways=pathways,
               baseline_id_var=params$baseline_id_var,
-              selected_pathway=1) 
+              selected_pathway=1)
 
 plots[[1]]$p
 

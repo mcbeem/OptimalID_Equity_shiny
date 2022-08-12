@@ -1770,7 +1770,7 @@ server <- function(input, output, session) {
                                     reference_grp=filter_string,
                                     pathways=list(pathway_2 = list(
                                       assessments=input$assessments2,
-                                      listwise=listwise$listwise2,
+                                      listwise=listwise$listwise,
                                       nom=input$nom2,
                                       nom_cutoff=input$nom_cutoff2,
                                       test_cutoff=input$mean_cutoff2,
@@ -1850,7 +1850,7 @@ server <- function(input, output, session) {
                                     reference_grp=filter_string,
                                     pathways=list(pathway_3 = list(
                                       assessments=input$assessments3,
-                                      listwise=listwise$listwise3,
+                                      listwise=listwise$listwise,
                                       nom=input$nom3,
                                       nom_cutoff=input$nom_cutoff3,
                                       test_cutoff=input$mean_cutoff3,
@@ -1931,7 +1931,7 @@ server <- function(input, output, session) {
                                     reference_grp=filter_string,
                                     pathways=list(pathway_4 = list(
                                       assessments=input$assessments4,
-                                      listwise=listwise$listwise4,
+                                      listwise=listwise$listwise,
                                       nom=input$nom4,
                                       nom_cutoff=input$nom_cutoff4,
                                       test_cutoff=input$mean_cutoff4,
@@ -2007,7 +2007,7 @@ server <- function(input, output, session) {
           
           pathways = append(pathways, list(pathway_2 = list(
             assessments=input$assessments2,
-            listwise=listwise$listwise2,
+            listwise=listwise$listwise,
             nom=input$nom2,
             nom_cutoff=input$nom_cutoff2,
             test_cutoff=input$mean_cutoff2,
@@ -2021,7 +2021,7 @@ server <- function(input, output, session) {
           
           pathways = append(pathways, list(pathway_3 = list(
             assessments=input$assessments3,
-            listwise=listwise$listwise3,
+            listwise=listwise$listwise,
             nom=input$nom3,
             nom_cutoff=input$nom_cutoff3,
             test_cutoff=input$mean_cutoff3,
@@ -2035,7 +2035,7 @@ server <- function(input, output, session) {
           
           pathways = append(pathways, list(pathway_4 = list(
             assessments=input$assessments4,
-            listwise=listwise$listwise4,
+            listwise=listwise$listwise,
             nom=input$nom4,
             nom_cutoff=input$nom_cutoff4,
             test_cutoff=input$mean_cutoff4,
@@ -2105,7 +2105,7 @@ server <- function(input, output, session) {
         
         pathways = append(pathways, list(pathway_2 = list(
           assessments=input$assessments2,
-          listwise=listwise$listwise2,
+          listwise=listwise$listwise,
           nom=input$nom2,
           nom_cutoff=input$nom_cutoff2,
           test_cutoff=input$mean_cutoff2,
@@ -2119,7 +2119,7 @@ server <- function(input, output, session) {
         
         pathways = append(pathways, list(pathway_3 = list(
           assessments=input$assessments3,
-          listwise=listwise$listwise3,
+          listwise=listwise$listwise,
           nom=input$nom3,
           nom_cutoff=input$nom_cutoff3,
           test_cutoff=input$mean_cutoff3,
@@ -2133,7 +2133,7 @@ server <- function(input, output, session) {
         
         pathways = append(pathways, list(pathway_4 = list(
           assessments=input$assessments4,
-          listwise=listwise$listwise4,
+          listwise=listwise$listwise,
           nom=input$nom4,
           nom_cutoff=input$nom_cutoff4,
           test_cutoff=input$mean_cutoff4,
@@ -2273,7 +2273,6 @@ output$report <- downloadHandler(
       mean_cutoff4=input$mean_cutoff4,
       
       baseline_id_var=input$baseline_id_var,
-      equity_tbl=tables$equity_table,
       group_stats_tbl=tables$group_stats)
     
     # Knit the document, passing in the `params` list, and eval it in a
