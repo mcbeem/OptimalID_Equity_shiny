@@ -788,7 +788,8 @@ equity_plot_multi = function(data,
                        pathways,
                        baseline_id_var,
                        plot_metric,
-                       selected_pathway=1) {
+                       selected_pathway=1,
+                       selected_pathway_name="Pathway 1") {
     
     
     summary_tbl = get_equity_multi(data=data,
@@ -796,8 +797,6 @@ equity_plot_multi = function(data,
                              reference_grp=reference_grp,
                              pathways=pathways,
                              baseline_id_var=baseline_id_var)[[selected_pathway]]
-    
-    
 
     # this line filters out any row from the summary table with an NA for any
     #  of the columns in 'group' -- except for the rows for Cramer's V
@@ -822,7 +821,7 @@ equity_plot_multi = function(data,
         theme(legend.position="bottom",
               axis.text.x = element_text(angle = 45, hjust = 1))+
         scale_fill_brewer(palette="Set1")+
-        ggtitle(paste0("Metric: ", plot_metric))+
+        ggtitle(paste0("Pathway: ", selected_pathway_name, "\nMetric: ", plot_metric))+
         theme(text=element_text(size=16))+
         labs(fill=NULL)
     
@@ -907,6 +906,9 @@ process_equity_tbl <- function(tbl, group, pathway_lbl, pathway_num) {
       tbl_wide = mutate(tbl_wide, comparison =
                           replace(comparison, comparison==paste0('opti_pathway_', pathway_num), 
                                   pathway_lbl))
+      # catch condition where the pathway is called 'any'
+      tbl_wide = mutate(tbl_wide, comparison =
+                          replace(comparison, comparison=='opti_any_pathway', pathway_lbl))
     }
   }
   

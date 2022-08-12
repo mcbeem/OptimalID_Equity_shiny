@@ -1699,7 +1699,8 @@ server <- function(input, output, session) {
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric,
-                                    selected_pathway=1
+                                    selected_pathway=1,
+                                    selected_pathway_name=input$lbl_pathway1
         )
         
         # # load the table into the reactive object for display and download
@@ -1778,7 +1779,8 @@ server <- function(input, output, session) {
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric2,
-                                    selected_pathway=1
+                                    selected_pathway=1,
+                                    selected_pathway_name=input$lbl_pathway2
         )
         
         # # load the table into the reactive object for display and download
@@ -1858,7 +1860,8 @@ server <- function(input, output, session) {
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric3,
-                                    selected_pathway=1
+                                    selected_pathway=1,
+                                    selected_pathway_name=input$lbl_pathway3
         )
         
         
@@ -1939,7 +1942,8 @@ server <- function(input, output, session) {
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric4,
-                                    selected_pathway=1
+                                    selected_pathway=1,
+                                    selected_pathway_name=input$lbl_pathway4
         )
         
         
@@ -2050,7 +2054,8 @@ server <- function(input, output, session) {
                                     pathways=pathways,
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric_all,
-                                    selected_pathway=length(pathways)+1
+                                    selected_pathway=length(pathways)+1,
+                                    selected_pathway_name="Identified under any pathway"
         )
         
     # show the plot
@@ -2150,6 +2155,8 @@ server <- function(input, output, session) {
         input$lbl_pathway3,
         input$lbl_pathway4
       )
+      
+      pathway_label_list[[length(pathways)+1]] = "Identified under any pathway"
     
       for (i in 1:(length(pathways)+1)) {
         
@@ -2159,7 +2166,8 @@ server <- function(input, output, session) {
                                     pathways=pathways,
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric_all,
-                                    selected_pathway=i)$summary_tbl
+                                    selected_pathway=i,
+                                    selected_pathway_name=pathway_label_list[[i]])$summary_tbl
         
         if (i < (length(pathways)+1)) {
           results[[i]] = process_equity_tbl(tbl=this_result,
@@ -2171,7 +2179,7 @@ server <- function(input, output, session) {
           if (length(pathways) > 1) {
             results[[i]] = process_equity_tbl(tbl=this_result,
                                               group=group,
-                                              pathway_lbl="All pathways", 
+                                              pathway_lbl="Any pathway", 
                                               pathway_num=i) 
           }
         }

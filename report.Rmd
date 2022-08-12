@@ -265,6 +265,8 @@ if (!is.null(params$group) &
       params$pathway_name4
   )
   
+  pathway_label_list[[length(pathways)+1]] = "Identified under any pathway"
+  
   
   for (i in 1:(length(pathways)+1)) {
     
@@ -274,19 +276,21 @@ if (!is.null(params$group) &
                                 pathways=pathways,
                                 baseline_id_var=params$baseline_id_var,
                                 plot_metric='Count',
-                                selected_pathway=i)$summary_tbl
+                                selected_pathway=i,
+                                selected_pathway_name=pathway_label_list[[i]])$summary_tbl
     
     if (i < (length(pathways)+1)) {
       results[[i]] = process_equity_tbl(tbl=this_result,
                                         group=params$group,
                                         pathway_lbl=pathway_label_list[[i]], 
-                                        pathway_num=i) 
+                                        pathway_num=i
+                                        ) 
     } else {
      
       if (length(pathways) > 1) {
         results[[i]] = process_equity_tbl(tbl=this_result,
                                           group=params$group,
-                                          pathway_lbl="All pathways", 
+                                          pathway_lbl="Any pathway", 
                                           pathway_num=i) 
       }
     }
@@ -336,7 +340,8 @@ plots = lapply(metrics, equity_plot_multi,
               reference_grp=params$group_filter_string,
               pathways=pathways,
               baseline_id_var=params$baseline_id_var,
-              selected_pathway=1)
+              selected_pathway=1,
+              selected_pathway_name=pathway_label_list[[1]])
 
 plots[[1]]$p
 
