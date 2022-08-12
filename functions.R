@@ -174,6 +174,56 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   }
 }
 
+# define function for assigning gifted status based on optimal id using an empirical percentile
+identify_opti_empirical <- function(data, assessments, nom, nom_cutoff, test_cutoff,
+                                    mode = "decisions", listwise=TRUE, weights = NA) {
+  
+  if (mode %!in% c("decisions", "meanscores")) {
+    stop("argument 'mode' must be one of 'decisions' or 'meanscores'")
+  }
+  
+  # if no weights were given, set them all to 1
+  if (is.na(weights[1])) {
+    weights <- rep(1, times = length(assessments))
+  }
+  
+  # normalize the weights
+  w <- weights / sum(weights)
+  
+  # get a matrix of weights, zeros for missings
+  # w2 stacks the normalized weights into a matrix 
+  w2 = matrix(w, ncol=ncol(data[assessments]), 
+              nrow=nrow(data[assessments]), byrow=TRUE)
+  
+  w_mat = (!is.na(as.matrix(data[assessments])) ) * 1 * w2
+  
+  w_mat_norm = w_mat / rowSums(w_mat)
+  
+  # which rows are all NA?
+  row_index_allNA = apply(w_mat_norm, 1, function(x) {as.logical(min(is.na(x)))})
+  
+  # get the means, note that the listwise setting is inverted and applied
+  #  as the na.rm argument!
+  meanscore = rowSums(w_mat_norm * data[assessments], na.rm=!listwise)
+  
+  # if all the values in the row were NA, its average will be 0 (not NA); this 
+  #  will distort the mean. so we need to set it to NA
+  meanscore[row_index_allNA] = NA
+  
+  nom_cutoff_val = quantile(data[, nom],probs=nom_cutoff, na.rm=TRUE)
+  test_cutoff_val = quantile(meanscore, probs=test_cutoff, na.rm=TRUE)
+  
+  # shrinkage-adjusted cutoff
+  opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)
+  
+  if (mode == "decisions") {
+    return(opti_gifted)
+  } else if (mode == "meanscores") {
+    return(meanscore)
+  }
+}
+
+
 # define function for creating the equity summary table
 equity_table <- function(data, id_var, group=NA) {
   

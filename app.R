@@ -2239,7 +2239,7 @@ output$report <- downloadHandler(
       reference_grp2=input$reference_grp2,
       group_filter_string=filters$group_filter_string,
       
-      last_pathway = pathway_names$last_pathway,
+      last_pathway = pathway_status$last_pathway,
       listwise = listwise$listwise,
       
       pathway_name=input$lbl_pathway1,

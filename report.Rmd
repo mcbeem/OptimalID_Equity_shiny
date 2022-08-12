@@ -217,96 +217,92 @@ if (!is.null(params$group_stats_tbl)) {
 
 
 ```{r}
-# 
-# metrics = c("Count", "Representation Index", "Proportion Identified", 
-#                         "Relative Risk")
-# 
-# pathways = list()
-# 
-# pathways = append(pathways, list(pathway_1 = list(
-#     assessments=params$assessments,
-#     listwise=params$listwise,
-#     nom=params$nom,
-#     nom_cutoff=params$nom_cutoff,
-#     test_cutoff=params$mean_cutoff,
-#     weights=weights$w[1:length(params$assessments)])
-# )
-# )
-# 
-# 
-# if (pathway_status$last_pathway >= 2 & !is.null(params$assessments2) & 
-#     !is.null(params$nom2)) {
-#     
-#     pathways = append(pathways, list(pathway_2 = list(
-#         assessments=params$assessments2,
-#         listwise=params$listwise,
-#         nom=params$nom2,
-#         nom_cutoff=params$nom_cutoff2,
-#         test_cutoff=params$mean_cutoff2,
-#         weights=weights$w2[1:length(params$assessments2)])
-#     )
-#     )
-# }
-# 
-# if (pathway_status$last_pathway >= 3 & !is.null(params$assessments3) & 
-#     !is.null(params$nom3)) {
-#     
-#     pathways = append(pathways, list(pathway_3 = list(
-#         assessments=params$assessments3,
-#         listwise=params$listwise,
-#         nom=params$nom3,
-#         nom_cutoff=params$nom_cutoff3,
-#         test_cutoff=params$mean_cutoff3,
-#         weights=weights$w3[1:length(params$assessments3)])
-#     )
-#     )
-# }
-# 
-# if (pathway_status$last_pathway >= 4 & !is.null(params$assessments4) & 
-#     !is.null(params$nom)) {
-#     
-#     pathways = append(pathways, list(pathway_4 = list(
-#         assessments=params$assessments4,
-#         listwise=params$listwise,
-#         nom=params$nom4,
-#         nom_cutoff=params$nom_cutoff4,
-#         test_cutoff=params$mean_cutoff4,
-#         weights=weights$w4[1:length(params$assessments4)])
-#     )
-#     )
-# }
-# 
-# plots = lapply(metrics, equity_plot_multi,
-#                group=params$group,
-#               reference_grp=params$group_filter_string,
-#               pathways=pathways,
-#               assessments=params$assessments,
-#               nom=params$nom,
-#               nom_cutoff=params$nom_cutoff,
-#               mean_cutoff=params$mean_cutoff,
-#               baseline_id_var=params$baseline_id_var,
-#               selected_pathway=1) #length(pathways)+1
-#         
-# plots[[1]]$p
+
+metrics = c("Count", "Representation Index", "Proportion Identified",
+                        "Relative Risk")
+
+pathways = list()
+
+pathways = append(pathways, list(pathway_1 = list(
+    assessments=params$assessments,
+    listwise=params$listwise,
+    nom=params$nom,
+    nom_cutoff=params$nom_cutoff,
+    test_cutoff=params$mean_cutoff,
+    weights=params$weights)
+    )
+)
+
+
+if (params$last_pathway >= 2 & !is.null(params$assessments2) &
+    !is.null(params$nom2)) {
+
+    pathways = append(pathways, list(pathway_2 = list(
+        assessments=params$assessments2,
+        listwise=params$listwise,
+        nom=params$nom2,
+        nom_cutoff=params$nom_cutoff2,
+        test_cutoff=params$mean_cutoff2,
+        weights=params$weights2)
+    )
+    )
+}
+
+if (params$last_pathway >= 3 & !is.null(params$assessments3) &
+    !is.null(params$nom3)) {
+
+    pathways = append(pathways, list(pathway_3 = list(
+        assessments=params$assessments3,
+        listwise=params$listwise,
+        nom=params$nom3,
+        nom_cutoff=params$nom_cutoff3,
+        test_cutoff=params$mean_cutoff3,
+        weights=params$weights3)
+    )
+    )
+}
+
+if (params$last_pathway >= 4 & !is.null(params$assessments4) &
+    !is.null(params$nom)) {
+
+    pathways = append(pathways, list(pathway_4 = list(
+        assessments=params$assessments4,
+        listwise=params$listwise,
+        nom=params$nom4,
+        nom_cutoff=params$nom_cutoff4,
+        test_cutoff=params$mean_cutoff4,
+        weights=params$weights4)
+    )
+    )
+}
+
+plots = lapply(metrics, equity_plot_multi,
+              group=params$group,
+              reference_grp=params$group_filter_string,
+              pathways=pathways,
+              baseline_id_var=params$baseline_id_var,
+              selected_pathway=1) 
+
+plots[[1]]$p
 
 ```
 
 <br>
 
 ```{r}
-# plots[[2]]$p
+plots[[2]]$p
 ```
 
 <br>
 
 ```{r}
-# plots[[3]]$p
+plots[[3]]$p
 ```
 
 <br>
 
 ```{r}
-# plots[[4]]$p
+plots[[4]]$p
 ```
 
 
