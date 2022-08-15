@@ -60,7 +60,7 @@ params:
 \captionsetup[table]{labelformat=empty}
 
 
-```{r, include=FALSE}
+```{r load-packages, include=FALSE}
 library(dplyr)
 library(ggplot2)
 library(data.table)
@@ -94,7 +94,7 @@ This report was created using the [Optimal ID equity explorer app](https://mmcbe
 `r ifelse(params$run_notes != '', paste("**Notes**:", params$run_notes), '')`
 
 
-```{r}
+```{r filter-and-group-strings}
 # construct filtering and group selection strings
 if (!is.null(params$filter_group)) {
 
@@ -142,7 +142,7 @@ if (!is.null(params$group)) {
 ```
 
 
-```{r}
+```{r construct-pathways}
 # construct the pathways from the input, used to construct the equity statistics table
 #  and the plots
 
@@ -204,28 +204,18 @@ if (params$last_pathway >= 4 & !is.null(params$assessments4) &
 
 
 
-```{r}
+```{r build-settings-table}
 settings_tbl = data.frame(
   Parameter = c('Uploaded file', 
                 'Data filtering', 
                 'Group(s) selected for equity analysis',
                 'Reference equity group',
-                'Baseline identification indicator variable name',
-                'Nomination (phase-1) assessment',
-                'Nomination (phase-1) percentile cutoff',
-                'Phase-2 assessments',
-                'Phase-2 assessment weights',
-                'Phase-2 percentile cutoff'),
+                'Baseline identification indicator variable name'),
   Setting = c(params$file, 
               toString(data_filter_string),
               toString(params$group),
               toString(filter_string),
-              params$baseline_id_var,
-              params$nom,
-              toString(round(params$nom_cutoff, 3)),
-              toString(params$assessments),
-              toString(paste0(round(params$weights, 3))),
-              round(params$mean_cutoff, 3)
+              params$baseline_id_var
   ))
               
               
@@ -242,8 +232,131 @@ settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
 
 <br>
 
+```{r pathway1-table}
+if (params$last_pathway >= 1) {
+  
+  pathway1_tbl = data.frame(
+    Parameter = c('Pathway name',
+                  'Nomination (phase-1) assessment', 
+                  'Nomination (phase-1) percentile cutoff', 
+                  'Phase-2 assessments',
+                  'Phase-2 assessment weights',
+                  'Phase-2 percentile cutoff'),
+    Setting = c(toString(params$pathway_name), 
+                toString(params$nom),
+                toString(params$nom_cutoff),
+                toString(params$assessments),
+                toString(params$weights),
+                toString(params$mean_cutoff)
+    ))
+  
+  pathway1_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+    caption = 'Table 2A: Pathway 1',
+    autonum = run_autonum(),
+    style = "paragraph",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
+```
 
-```{r, warnings=FALSE}
+<br>
+
+
+```{r, pathway2-table}
+if (params$last_pathway >= 2) {
+  
+  pathway2_tbl = data.frame(
+    Parameter = c('Pathway name',
+                  'Nomination (phase-1) assessment', 
+                  'Nomination (phase-1) percentile cutoff', 
+                  'Phase-2 assessments',
+                  'Phase-2 assessment weights',
+                  'Phase-2 percentile cutoff'),
+    Setting = c(toString(params$pathway_name2), 
+                toString(params$nom2),
+                toString(params$nom_cutoff2),
+                toString(params$assessments2),
+                toString(params$weights2),
+                toString(params$mean_cutoff2)
+    ))
+  
+  pathway2_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+    caption = 'Table 2B: Pathway 2',
+    autonum = run_autonum(),
+    style = "paragraph",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
+```
+
+<br>
+
+```{r pathway3-table}
+
+if (params$last_pathway >= 3) {
+  
+  pathway1_tbl = data.frame(
+    Parameter = c('Pathway name',
+                  'Nomination (phase-1) assessment', 
+                  'Nomination (phase-1) percentile cutoff', 
+                  'Phase-2 assessments',
+                  'Phase-2 assessment weights',
+                  'Phase-2 percentile cutoff'),
+    Setting = c(toString(params$pathway_name3), 
+                toString(params$nom3),
+                toString(params$nom_cutoff3),
+                toString(params$assessments3),
+                toString(params$weights3),
+                toString(params$mean_cutoff3)
+    ))
+  
+  pathway3_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+    caption = 'Table 2C: Pathway 3',
+    autonum = run_autonum(),
+    style = "paragraph",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
+```
+
+<br>
+
+
+```{r pathway4-table}
+
+if (params$last_pathway >= 4) {
+  
+  pathway4_tbl = data.frame(
+    Parameter = c('Pathway name',
+                  'Nomination (phase-1) assessment', 
+                  'Nomination (phase-1) percentile cutoff', 
+                  'Phase-2 assessments',
+                  'Phase-2 assessment weights',
+                  'Phase-2 percentile cutoff'),
+    Setting = c(toString(params$pathway_name4), 
+                toString(params$nom4),
+                toString(params$nom_cutoff4),
+                toString(params$assessments4),
+                toString(params$weights4),
+                toString(params$mean_cutoff4)
+    ))
+  
+  pathway4_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
+    caption = 'Table 2D: Pathway 4',
+    autonum = run_autonum(),
+    style = "paragraph",
+    html_escape = TRUE
+  ) %>% fit_to_width(7)
+  
+}
+```
+
+<br>
+
+```{r build-equity-table, warnings=FALSE}
 
 
 if (!is.null(params$group) & 
@@ -300,7 +413,7 @@ if (!is.null(params$group) &
 
   equity_table %>% distinct() %>% arrange(comparison) %>% flextable() %>% autofit() %>% 
     theme_zebra() %>% set_caption(
-    caption = 'Table 2: Population size and equity metrics',
+    caption = 'Table 3: Population size and equity metrics',
     autonum = NULL,
     style = "Table Caption",
     html_escape = TRUE
@@ -312,12 +425,12 @@ if (!is.null(params$group) &
 
 <br>
 
-```{r}
+```{r build-descriptives-table}
 
 if (!is.null(params$group_stats_tbl)) {
   
   params$group_stats_tbl %>% distinct() %>% regulartable() %>% autofit() %>% theme_zebra() %>% set_caption(
-    caption = 'Table 3: Assessment descriptive statistics by group',
+    caption = 'Table 4: Assessment descriptive statistics by group',
     autonum = NULL,
     style = "Table Caption",
     html_escape = TRUE
@@ -329,7 +442,7 @@ if (!is.null(params$group_stats_tbl)) {
 <!-- -->
 
 
-```{r}
+```{r build-plots}
 
 metrics = c("Count", "Representation Index", "Proportion Identified",
                         "Relative Risk")
@@ -357,7 +470,7 @@ plots = mapply(equity_plot_multi,
 
 ```
 
-```{r}
+```{r plot11}
 if (length(plots) >= 1) {
   plots[[1]]$p
 }
@@ -366,7 +479,7 @@ if (length(plots) >= 1) {
 
 <br>
 
-```{r}
+```{r plot12}
 if (length(plots) >= 2) {
   plots[[2]]$p
 }
@@ -374,7 +487,7 @@ if (length(plots) >= 2) {
 
 <br>
 
-```{r}
+```{r plot13}
 if (length(plots) >= 3) {
   plots[[3]]$p
 }
@@ -382,7 +495,7 @@ if (length(plots) >= 3) {
 
 <br>
 
-```{r}
+```{r plot14}
 if (length(plots) >= 4) {
   plots[[4]]$p
 }
@@ -390,7 +503,7 @@ if (length(plots) >= 4) {
 
 <br>
 
-```{r}
+```{r, plot21}
 if (length(plots) >= 5) {
   plots[[5]]$p
 }
@@ -398,7 +511,7 @@ if (length(plots) >= 5) {
 
 <br>
 
-```{r}
+```{r plot22}
 if (length(plots) >= 6) {
   plots[[6]]$p
 }
@@ -406,7 +519,7 @@ if (length(plots) >= 6) {
 
 <br>
 
-```{r}
+```{r plot23}
 if (length(plots) >= 7) {
   plots[[7]]$p
 }
@@ -414,7 +527,7 @@ if (length(plots) >= 7) {
 
 <br>
 
-```{r}
+```{r plot24}
 if (length(plots) >= 8) {
   plots[[8]]$p
 }
@@ -422,7 +535,7 @@ if (length(plots) >= 8) {
 
 <br>
 
-```{r}
+```{r plot31}
 if (length(plots) >= 9) {
   plots[[9]]$p
 }
@@ -430,7 +543,7 @@ if (length(plots) >= 9) {
 
 <br>
 
-```{r}
+```{r plot32}
 if (length(plots) >= 10) {
   plots[[10]]$p
 }
@@ -438,7 +551,7 @@ if (length(plots) >= 10) {
 
 <br>
 
-```{r}
+```{r plot33}
 if (length(plots) >= 11) {
   plots[[11]]$p
 }
@@ -446,7 +559,7 @@ if (length(plots) >= 11) {
 
 <br>
 
-```{r}
+```{r plot34}
 if (length(plots) >= 12) {
   plots[[12]]$p
 }
@@ -454,7 +567,7 @@ if (length(plots) >= 12) {
 
 <br>
 
-```{r}
+```{r plot41}
 if (length(plots) >= 13) {
   plots[[13]]$p
 }
@@ -462,7 +575,7 @@ if (length(plots) >= 13) {
 
 <br>
 
-```{r}
+```{r plot42}
 if (length(plots) >= 14) {
   plots[[14]]$p
 }
@@ -470,7 +583,7 @@ if (length(plots) >= 14) {
 
 <br>
 
-```{r}
+```{r plot43}
 if (length(plots) >= 15) {
   plots[[15]]$p
 }
@@ -478,7 +591,7 @@ if (length(plots) >= 15) {
 
 <br>
 
-```{r}
+```{r plot44}
 if (length(plots) >= 16) {
   plots[[16]]$p
 }
@@ -486,7 +599,7 @@ if (length(plots) >= 16) {
 
 <br>
 
-```{r}
+```{r plot51}
 if (length(plots) >= 17) {
   plots[[17]]$p
 }
@@ -494,7 +607,7 @@ if (length(plots) >= 17) {
 
 <br>
 
-```{r}
+```{r plot52}
 if (length(plots) >= 18) {
   plots[[18]]$p
 }
@@ -502,7 +615,7 @@ if (length(plots) >= 18) {
 
 <br>
 
-```{r}
+```{r plot53}
 if (length(plots) >= 19) {
   plots[[19]]$p
 }
@@ -510,7 +623,7 @@ if (length(plots) >= 19) {
 
 <br>
 
-```{r}
+```{r plot54}
 if (length(plots) >= 20) {
   plots[[20]]$p
 }
