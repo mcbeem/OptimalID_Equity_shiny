@@ -21,32 +21,32 @@ params:
   last_pathway: NA
   listwise: NA
   
-  pathway_name: NA
+  pathway_name1: NA
   pathway_name2: NA
   pathway_name3: NA
   pathway_name4: NA
   
-  assessments: NA
+  assessments1: NA
   assessments2: NA
   assessments3: NA
   assessments4: NA
   
-  weights: NA
+  weights1: NA
   weights2: NA
   weights3: NA
   weights4: NA
   
-  nom: NA
+  nom1: NA
   nom2: NA
   nom3: NA
   nom4: NA
   
-  nom_cutoff: NA
+  nom_cutoff1: NA
   nom_cutoff2: NA
   nom_cutoff3: NA
   nom_cutoff4: NA
   
-  mean_cutoff: NA
+  mean_cutoff1: NA
   mean_cutoff2: NA
   mean_cutoff3: NA
   mean_cutoff4: NA
@@ -149,12 +149,12 @@ if (!is.null(params$group)) {
 pathways = list()
 
 pathways = append(pathways, list(pathway_1 = list(
-    assessments=params$assessments,
+    assessments=params$assessments1,
     listwise=params$listwise,
-    nom=params$nom,
-    nom_cutoff=params$nom_cutoff,
-    test_cutoff=params$mean_cutoff,
-    weights=params$weights)
+    nom=params$nom1,
+    nom_cutoff=params$nom_cutoff1,
+    test_cutoff=params$mean_cutoff1,
+    weights=params$weights1)
     )
 )
 
@@ -188,7 +188,7 @@ if (params$last_pathway >= 3 & !is.null(params$assessments3) &
 }
 
 if (params$last_pathway >= 4 & !is.null(params$assessments4) &
-    !is.null(params$nom)) {
+    !is.null(params$nom4)) {
 
     pathways = append(pathways, list(pathway_4 = list(
         assessments=params$assessments4,
@@ -233,7 +233,8 @@ settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
 <br>
 
 ```{r pathway1-table}
-if (params$last_pathway >= 1) {
+if (params$last_pathway >= 1 & !is.null(params$assessments1) & 
+    !is.null(params$nom1)) {
   
   pathway1_tbl = data.frame(
     Parameter = c('Pathway name',
@@ -242,12 +243,12 @@ if (params$last_pathway >= 1) {
                   'Phase-2 assessments',
                   'Phase-2 assessment weights',
                   'Phase-2 percentile cutoff'),
-    Setting = c(toString(params$pathway_name), 
-                toString(params$nom),
-                toString(params$nom_cutoff),
-                toString(params$assessments),
-                toString(params$weights),
-                toString(params$mean_cutoff)
+    Setting = c(toString(params$pathway_name1), 
+                toString(params$nom1),
+                toString(params$nom_cutoff1),
+                toString(params$assessments1),
+                toString(params$weights1),
+                toString(params$mean_cutoff1)
     ))
   
   pathway1_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
@@ -264,7 +265,8 @@ if (params$last_pathway >= 1) {
 
 
 ```{r, pathway2-table}
-if (params$last_pathway >= 2) {
+if (params$last_pathway >= 2 & !is.null(params$assessments2) & 
+    !is.null(params$nom2)) {
   
   pathway2_tbl = data.frame(
     Parameter = c('Pathway name',
@@ -295,9 +297,10 @@ if (params$last_pathway >= 2) {
 
 ```{r pathway3-table}
 
-if (params$last_pathway >= 3) {
+if (params$last_pathway >= 3 & !is.null(params$assessments3) & 
+    !is.null(params$nom3)) {
   
-  pathway1_tbl = data.frame(
+  pathway3_tbl = data.frame(
     Parameter = c('Pathway name',
                   'Nomination (phase-1) assessment', 
                   'Nomination (phase-1) percentile cutoff', 
@@ -327,7 +330,8 @@ if (params$last_pathway >= 3) {
 
 ```{r pathway4-table}
 
-if (params$last_pathway >= 4) {
+if (params$last_pathway >= 4 & !is.null(params$assessments4) & 
+    !is.null(params$nom4)) {
   
   pathway4_tbl = data.frame(
     Parameter = c('Pathway name',
@@ -360,11 +364,11 @@ if (params$last_pathway >= 4) {
 
 
 if (!is.null(params$group) & 
-        (!is.null(params$assessments) | 
+        (!is.null(params$assessments1) | 
          !is.null(params$assessments2) |
          !is.null(params$assessments3) |
          !is.null(params$assessments4) ) &
-        (!is.null(params$nom) |
+        (!is.null(params$nom1) |
          !is.null(params$nom2) |
          !is.null(params$nom3) |
          !is.null(params$nom4)) ) {
@@ -372,7 +376,7 @@ if (!is.null(params$group) &
   results = list()
       
   pathway_label_list = list(
-      params$pathway_name,
+      params$pathway_name1,
       params$pathway_name2,
       params$pathway_name3,
       params$pathway_name4
@@ -439,10 +443,11 @@ if (!is.null(params$group_stats_tbl)) {
 }
 ```
 
-<!-- -->
-
+<br>
 
 ```{r build-plots}
+
+
 
 metrics = c("Count", "Representation Index", "Proportion Identified",
                         "Relative Risk")
@@ -451,10 +456,10 @@ metrics = c("Count", "Representation Index", "Proportion Identified",
 paths = if(params$last_pathway == 1) {               
                1} else {
                  1:(params$last_pathway + 1)
-                 }
+               }
+
 
 plot_params = expand_grid(metrics, paths)
-
 
 plots = mapply(equity_plot_multi, 
                plot_metric = plot_params[["metrics"]],

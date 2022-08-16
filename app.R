@@ -1021,7 +1021,7 @@ ui <- fluidPage(
                          inline=TRUE
                        ),
                        
-                       downloadButton("report", "Generate report")
+                       downloadButton("btn_report", "Generate report")
                        
               ),
               
@@ -1046,6 +1046,7 @@ server <- function(input, output, session) {
   # and a disabled 'remove pathway' button
   shinyjs::disable('loadFile')
   shinyjs::disable("btn_removePathway")
+  shinyjs::disable("btn_report")
   
   # hide tabs on load
   hideTab(inputId = "main", target = "Pathway 2")
@@ -1122,6 +1123,64 @@ server <- function(input, output, session) {
     last_pathway = 1
   )
 
+# create logic for enabling / disabling download button -------------------
+#  condition: all pathways have necessary info specified, a group or groups are selected,
+#   reference levels are designated, and a baseline id variable has been chosen
+  observe({
+    if (pathway_status$last_pathway == 1 &
+        !is.null(input$assessments) &
+        !is.null(input$nom) &
+        !is.null(input$nom) &
+        ((length(input$group) == 1 & !is.null(input$reference_grp1)) |
+        (length(input$group) == 2 & !is.null(input$reference_grp1) & 
+         !is.null(input$reference_grp2))) &
+        !is.null(input$baseline_id_var)
+        ) {
+      shinyjs::enable("btn_report")
+    } else if (pathway_status$last_pathway == 2 &
+               !is.null(input$assessments) &
+               !is.null(input$assessments2) &
+               !is.null(input$nom) &
+               !is.null(input$nom2) &
+               ((length(input$group) == 1 & !is.null(input$reference_grp1)) |
+                (length(input$group) == 2 & !is.null(input$reference_grp1) & 
+                 !is.null(input$reference_grp2))) &
+               !is.null(input$baseline_id_var)
+              ) {
+      shinyjs::enable("btn_report")
+    } else if (pathway_status$last_pathway == 3 &
+               !is.null(input$assessments) &
+               !is.null(input$assessments2) &
+               !is.null(input$assessments3) &
+               !is.null(input$nom) &
+               !is.null(input$nom2) & 
+               !is.null(input$nom3) &
+               ((length(input$group) == 1 & !is.null(input$reference_grp1)) |
+                (length(input$group) == 2 & !is.null(input$reference_grp1) & 
+                 !is.null(input$reference_grp2))) &
+               !is.null(input$baseline_id_var)
+               ) {
+      shinyjs::enable("btn_report") 
+    } else if (pathway_status$last_pathway == 4 &
+               !is.null(input$assessments) &
+               !is.null(input$assessments2) &
+               !is.null(input$assessments3) &
+               !is.null(input$assessments4) &
+               !is.null(input$nom) &
+               !is.null(input$nom2) & 
+               !is.null(input$nom3) &
+               !is.null(input$nom4) &
+               ((length(input$group) == 1 & !is.null(input$reference_grp1)) |
+                (length(input$group) == 2 & !is.null(input$reference_grp1) & 
+                 !is.null(input$reference_grp2))) &
+               !is.null(input$baseline_id_var)
+    ) {
+      shinyjs::enable("btn_report") 
+    } else {
+      shinyjs::disable("btn_report") 
+    }
+  })
+  
 # define logic for adding / removing pathways -----------------------------
   
   observeEvent(input$btn_addPathway, {
@@ -1282,7 +1341,6 @@ server <- function(input, output, session) {
     
   })  
   
-  
 
 # do the initial data loading when no filtering has been selected ---------
 
@@ -1437,6 +1495,29 @@ server <- function(input, output, session) {
   
   observe({
     listwise$listwise=input$listwise
+  })
+  
+  # set initial pathway names
+  observe({
+    updateTextInput(
+      session = session,
+      inputId = "lbl_pathway1",
+      value = "Pathway 1")
+    
+    updateTextInput(
+      session = session,
+      inputId = "lbl_pathway2",
+      value = "Pathway 2")
+    
+    updateTextInput(
+      session = session,
+      inputId = "lbl_pathway3",
+      value = "Pathway 3")
+    
+    updateTextInput(
+      session = session,
+      inputId = "lbl_pathway4",
+      value = "Pathway 4")
   })
   
   
@@ -1703,19 +1784,6 @@ server <- function(input, output, session) {
                                     selected_pathway_name=input$lbl_pathway1
         )
         
-        # # load the table into the reactive object for display and download
-        # tables$equity_table_1 = process_equity_tbl(tbl=results$summary_tbl,
-        #                                            group=group,
-        #                                            pathway_lbl=input$lbl_pathway1, 
-        #                                            pathway_num=1) 
-        # 
-        # # build the integrated table of all the group statistics over the pathways
-        # tables$equity_table = rbind(
-        #   tables$equity_table_1, 
-        #   tables$equity_table_2, 
-        #   tables$equity_table_3, 
-        #   tables$equity_table_4)
-        
         # show the plot
         return(results$p)
         
@@ -1782,19 +1850,6 @@ server <- function(input, output, session) {
                                     selected_pathway=1,
                                     selected_pathway_name=input$lbl_pathway2
         )
-        
-        # # load the table into the reactive object for display and download
-        # tables$equity_table_2 = process_equity_tbl(tbl=results$summary_tbl,
-        #                                            group=group,
-        #                                            pathway_lbl=input$lbl_pathway2, 
-        #                                            pathway_num=2) 
-        # 
-        # # build the integrated table of all the equity tables over the pathways
-        # tables$equity_table = rbind(
-        #   tables$equity_table_1,
-        #   tables$equity_table_2,
-        #   tables$equity_table_3,
-        #   tables$equity_table_4)
 
         # show the plot
         return(results$p)
@@ -1864,21 +1919,6 @@ server <- function(input, output, session) {
                                     selected_pathway_name=input$lbl_pathway3
         )
         
-        
-        
-        # # load the table into the reactive object for display and download
-        # tables$equity_table_3 = process_equity_tbl(tbl=results$summary_tbl,
-        #                                            group=group,
-        #                                            pathway_lbl=input$lbl_pathway3, 
-        #                                            pathway_num=3) 
-        # 
-        # # build the integrated table of all the equity tables over the pathways
-        # tables$equity_table = rbind(
-        #   tables$equity_table_1,
-        #   tables$equity_table_2,
-        #   tables$equity_table_3,
-        #   tables$equity_table_4)
-        
         # show the plot
         return(results$p)
         
@@ -1945,20 +1985,6 @@ server <- function(input, output, session) {
                                     selected_pathway=1,
                                     selected_pathway_name=input$lbl_pathway4
         )
-        
-        
-        # # load the table into the reactive object for display and download
-        # tables$equity_table_4 = process_equity_tbl(tbl=results$summary_tbl,
-        #                                            group=group,
-        #                                            pathway_lbl=input$lbl_pathway4, 
-        #                                            pathway_num=4) 
-        # 
-        # # build the integrated table of all the equity tables over the pathways
-        # tables$equity_table = rbind(
-        #   tables$equity_table_1,
-        #   tables$equity_table_2,
-        #   tables$equity_table_3,
-        #   tables$equity_table_4)
         
         # show the plot
         return(results$p)
@@ -2218,7 +2244,7 @@ server <- function(input, output, session) {
 
 
 # generate report ---------------------------------------------------------
-output$report <- downloadHandler(
+output$btn_report <- downloadHandler(
   # For PDF output, change this to "report.pdf"
   #filename = "report.pdf",
   filename = function(){paste0("report.", input$reportFormat)},
@@ -2250,32 +2276,32 @@ output$report <- downloadHandler(
       last_pathway = pathway_status$last_pathway,
       listwise = listwise$listwise,
       
-      pathway_name=input$lbl_pathway1,
+      pathway_name1=input$lbl_pathway1,
       pathway_name2=input$lbl_pathway2,
       pathway_name3=input$lbl_pathway3,
       pathway_name4=input$lbl_pathway4,
       
-      assessments=input$assessments,
+      assessments1=input$assessments,
       assessments2=input$assessments2,
       assessments3=input$assessments3,
       assessments4=input$assessments4,
       
-      weights=weights$w[1: length(input$assessments)],
+      weights1=weights$w[1: length(input$assessments)],
       weights2=weights$w2[1: length(input$assessments2)],
       weights3=weights$w3[1: length(input$assessments3)],
       weights4=weights$w4[1: length(input$assessments4)],
       
-      nom=input$nom,
+      nom1=input$nom,
       nom2=input$nom2,
       nom3=input$nom3,
       nom4=input$nom4,
       
-      nom_cutoff=input$nom_cutoff,
+      nom_cutoff1=input$nom_cutoff,
       nom_cutoff2=input$nom_cutoff2,
       nom_cutoff3=input$nom_cutoff3,
       nom_cutoff4=input$nom_cutoff4,
       
-      mean_cutoff=input$mean_cutoff,
+      mean_cutoff1=input$mean_cutoff,
       mean_cutoff2=input$mean_cutoff2,
       mean_cutoff3=input$mean_cutoff3,
       mean_cutoff4=input$mean_cutoff4,
