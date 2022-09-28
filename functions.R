@@ -113,6 +113,47 @@ descr_table = function(data, vars, group=NA, digits=2, reference_grp=NA,
 
 
 
+#' empirical_quantile: a function for finding empirical quantiles
+#'   based on sorting with variable inclusion criteria
+#'
+#' @param x a numeric vector of scores
+#' @param percentile the target percentile, a numeric scalar [0,1)
+#' @param mode argument describing how to handle sparse discrete data
+#'    "inclusive" means to floor the target rank down to the next whole rank
+#'      (will always return at least one case if percentile < 1)
+#'    "exclusive" means to ceiling the target rank up to the next whole rank
+#'    "min_error" mean to choose the target rank by minimizing the distance to the 
+#'    desired percentile
+#'    Note: 'exclusive' and 'min_error' can return Inf
+
+empirical_quantile <- function(x, percentile, mode="min_error") {
+  
+  # sort in descending order
+  x = x[order(x, decreasing=TRUE)]
+  
+  target_rank = ((1 - percentile) * length(x))
+  
+  if (mode == "exclusive") {
+    target_rank = floor(target_rank)
+  } else if (mode == "inclusive") {
+    target_rank = ceiling(target_rank)
+  } else if (mode == "min_error") {
+    target_rank = round(target_rank, 0)
+  }
+  
+  # make the function return Inf instead of numeric(0) if no scores qualify
+  #  this will only happen in mode="exclusive" or "min_error"
+  if (identical(x[target_rank], numeric(0))) {
+    return(Inf)
+  } else {
+    return(x[target_rank])
+  }
+}
+  
+
+  
+  
+
 # define function for assigning gifted status based on optimal id
 identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
                           mode = "decisions", listwise=TRUE, weights = NA) {
