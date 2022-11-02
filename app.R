@@ -288,7 +288,6 @@ ui <- fluidPage(
                                   options=list(maxItems=6)
                                 ),
                                 
-                                
                                 checkboxInput(
                                   inputId = "adj_weights",
                                   label = "Adjust weights?",
@@ -415,6 +414,32 @@ ui <- fluidPage(
                                   step=.001
                                 ),
                                 
+                                checkboxInput(
+                                  inputId = "local_norm",
+                                  label = "Local norms?",
+                                ),
+                                
+                                conditionalPanel(
+                                  condition = "input.local_norm",
+                                  
+                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  
+                                  selectInput(
+                                    inputId = "local_norm_type",
+                                    label = "Local norm identification rule",
+                                    choices = list(
+                                      "Permissive",
+                                      "Strict",
+                                      "Nearest"),
+                                    selected = "Nearest",
+                                    multiple=FALSE
+                                  ),
+                                  
+                                  helpText(HTML("See the notes on <b>local norms tab</b> for more information on this control")),
+                                  
+                                ),
+                                
+                                
                          ), # closes column for pathway 1
                          
                          column(9,
@@ -460,7 +485,6 @@ ui <- fluidPage(
                                   choices = NULL,
                                   options=list(maxItems=6)
                                 ),
-                                
                                 
                                 checkboxInput(
                                   inputId = "adj_weights2",
@@ -590,6 +614,32 @@ ui <- fluidPage(
                                   value = .9,
                                   step=.001
                                 ),
+                                
+                                checkboxInput(
+                                  inputId = "local_norm2",
+                                  label = "Local norms?",
+                                ),
+                                
+                                conditionalPanel(
+                                  condition = "input.local_norm2",
+                                  
+                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  
+                                  selectInput(
+                                    inputId = "local_norm_type2",
+                                    label = "Local norm identification rule",
+                                    choices = list(
+                                      "Permissive",
+                                      "Strict",
+                                      "Nearest"),
+                                    selected = "Nearest",
+                                    multiple=FALSE
+                                  ),
+                                  
+                                  helpText(HTML("See the notes on <b>local norms tab</b> for more information on this control")),
+                                  
+                                ),
+                                
                                 
                          ), # closes column for pathway 2
                          
@@ -765,6 +815,32 @@ ui <- fluidPage(
                                   step=.001
                                 ),
                                 
+                                checkboxInput(
+                                  inputId = "local_norm3",
+                                  label = "Local norms?",
+                                ),
+                                
+                                conditionalPanel(
+                                  condition = "input.local_norm3",
+                                  
+                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  
+                                  selectInput(
+                                    inputId = "local_norm_type3",
+                                    label = "Local norm identification rule",
+                                    choices = list(
+                                      "Permissive",
+                                      "Strict",
+                                      "Nearest"),
+                                    selected = "Nearest",
+                                    multiple=FALSE
+                                  ),
+                                  
+                                  helpText(HTML("See the notes on <b>local norms tab</b> for more information on this control")),
+                                  
+                                ),
+                                
+                                
                          ), # closes column for pathway 3
                          
                          column(9,
@@ -936,6 +1012,32 @@ ui <- fluidPage(
                                   value = .9,
                                   step=.001
                                 ),
+                                
+                                checkboxInput(
+                                  inputId = "local_norm4",
+                                  label = "Local norms?",
+                                ),
+                                
+                                conditionalPanel(
+                                  condition = "input.local_norm4",
+                                  
+                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  
+                                  selectInput(
+                                    inputId = "local_norm_type4",
+                                    label = "Local norm identification rule",
+                                    choices = list(
+                                      "Permissive",
+                                      "Strict",
+                                      "Nearest"),
+                                    selected = "Nearest",
+                                    multiple=FALSE
+                                  ),
+                                  
+                                  helpText(HTML("See the notes on <b>local norms tab</b> for more information on this control")),
+                                  
+                                ),
+                                
                                 
                          ), # closes column for pathway 4
                          
