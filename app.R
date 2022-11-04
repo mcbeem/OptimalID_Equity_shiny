@@ -422,15 +422,21 @@ ui <- fluidPage(
                                 conditionalPanel(
                                   condition = "input.local_norm",
                                   
-                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  selectizeInput(
+                                    inputId = "local_norm_grp", 
+                                    label = "Grouping for local norm", 
+                                    multiple = FALSE,
+                                    choices = NULL,
+                                    options=list(maxItems=1)
+                                  ),
                                   
                                   selectInput(
                                     inputId = "local_norm_type",
-                                    label = "Local norm identification rule",
+                                    label = "Local norm tolerance",
                                     choices = list(
-                                      "Permissive",
-                                      "Strict",
-                                      "Nearest"),
+                                      "inclusive",
+                                      "exclusive",
+                                      "min_error"),
                                     selected = "Nearest",
                                     multiple=FALSE
                                   ),
@@ -623,15 +629,21 @@ ui <- fluidPage(
                                 conditionalPanel(
                                   condition = "input.local_norm2",
                                   
-                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  selectizeInput(
+                                    inputId = "local_norm_grp2", 
+                                    label = "Grouping for local norm", 
+                                    multiple = FALSE,
+                                    choices = NULL,
+                                    options=list(maxItems=1)
+                                  ),
                                   
                                   selectInput(
                                     inputId = "local_norm_type2",
                                     label = "Local norm identification rule",
                                     choices = list(
-                                      "Permissive",
-                                      "Strict",
-                                      "Nearest"),
+                                      "inclusive",
+                                      "exclusive",
+                                      "min_error"),
                                     selected = "Nearest",
                                     multiple=FALSE
                                   ),
@@ -823,15 +835,21 @@ ui <- fluidPage(
                                 conditionalPanel(
                                   condition = "input.local_norm3",
                                   
-                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  selectizeInput(
+                                    inputId = "local_norm_grp3", 
+                                    label = "Grouping for local norm", 
+                                    multiple = FALSE,
+                                    choices = NULL,
+                                    options=list(maxItems=1)
+                                  ),
                                   
                                   selectInput(
                                     inputId = "local_norm_type3",
                                     label = "Local norm identification rule",
                                     choices = list(
-                                      "Permissive",
-                                      "Strict",
-                                      "Nearest"),
+                                      "inclusive",
+                                      "exclusive",
+                                      "min_error"),
                                     selected = "Nearest",
                                     multiple=FALSE
                                   ),
@@ -1021,15 +1039,21 @@ ui <- fluidPage(
                                 conditionalPanel(
                                   condition = "input.local_norm4",
                                   
-                                  helpText(HTML("<strong>Note</strong>: Local norm variables must be expressed as within-group centered z-scores as per the data setup instructions.")),
+                                  selectizeInput(
+                                    inputId = "local_norm_grp4", 
+                                    label = "Grouping for local norm", 
+                                    multiple = FALSE,
+                                    choices = NULL,
+                                    options=list(maxItems=1)
+                                  ),
                                   
                                   selectInput(
                                     inputId = "local_norm_type4",
                                     label = "Local norm identification rule",
                                     choices = list(
-                                      "Permissive",
-                                      "Strict",
-                                      "Nearest"),
+                                      "inclusive",
+                                      "exclusive",
+                                      "min_error"),
                                     selected = "Nearest",
                                     multiple=FALSE
                                   ),
@@ -1636,6 +1660,30 @@ server <- function(input, output, session) {
       inputId = "filter_group", 
       choices = variable_names()
     )
+    # PPP
+    updateSelectInput(
+      session = session, 
+      inputId = "local_norm_grp", 
+      choices = variable_names()
+    )
+    
+    updateSelectInput(
+      session = session, 
+      inputId = "local_norm_grp2", 
+      choices = variable_names()
+    )
+    
+    updateSelectInput(
+      session = session, 
+      inputId = "local_norm_grp3", 
+      choices = variable_names()
+    )
+    
+    updateSelectInput(
+      session = session, 
+      inputId = "local_norm_grp4", 
+      choices = variable_names()
+    )
   })
   
   # this executes when the user selects an equity group
@@ -1847,7 +1895,9 @@ server <- function(input, output, session) {
                                          test_cutoff=input$mean_cutoff,
                                          listwise=listwise$listwise,
                                          mode = "meanscores", 
-                                         weights = weights$w[1:length(input$assessments)])
+                                         weights = weights$w[1:length(input$assessments)],
+                                         local_norm=input$local_norm,
+                                         local_norm_type=input$local_norm_type)
         
         
         # construct the descriptive statistics table and load it into

@@ -156,14 +156,28 @@ empirical_quantile <- function(x, percentile, mode="min_error") {
 
 # define function for assigning gifted status based on optimal id
 identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
-                          mode = "decisions", listwise=TRUE, weights = NA) {
+                          mode = "decisions", listwise=TRUE, weights = NA, 
+                          local_norm = FALSE, local_norm_type = "min_error") {
 
   if (mode %!in% c("decisions", "meanscores")) {
     stop("argument 'mode' must be one of 'decisions' or 'meanscores'")
   }
   
-  # calculate nomination cutoff at empirical percentile
-  nom_cutoff_val = qnorm(nom_cutoff)
+  if (local_norm == TRUE & local_norm_type %!in% 
+      c("inclusive", "exclusive", "min_error")) {
+        stop("if local_norms=TRUE, local_norm_type must be one of 'inclusive', 'exclusive', 'min_error'")
+        }
+  
+  if (local_norm == FALSE) {
+    # calculate nomination cutoff at normal density percentile
+    nom_cutoff_val = qnorm(nom_cutoff)
+    
+  } else if (local_norm == TRUE) {
+    nom_cutoff_val = empirical_quantile(x=data[[nom]], 
+                                        percentile=nom_cutoff, 
+                                        mode=local_norm_type)
+    
+  }
   
   
   # if no weights were given, set them all to 1
@@ -202,9 +216,16 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
       var_shrinkage_factor = var_mean(r=r, w=w)
   } else {var_shrinkage_factor = 1}
   
-  test_cutoff_val = qnorm(test_cutoff, 0, 
-                          sd=sqrt(var_shrinkage_factor*var(meanscore, na.rm=TRUE)))
-  
+  if (local_norm == FALSE) {
+    test_cutoff_val = qnorm(test_cutoff, 0, 
+                            sd=sqrt(var_shrinkage_factor*var(meanscore, na.rm=TRUE)))
+    
+  } else if (local_norm == TRUE) {
+    test_cutoff_val = empirical_quantile(x=meanscore, 
+                                        percentile=test_cutoff, 
+                                        mode=local_norm_type)
+  }
+    
   # shrinkage-adjusted cutoff
   opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)
   
