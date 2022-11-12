@@ -119,64 +119,108 @@ descr_table = function(data, vars, group=NA, digits=2, reference_grp=NA,
 #' @param x a numeric vector of scores
 #' @param percentile the target percentile, a numeric scalar [0,1)
 #' @param mode argument describing how to handle sparse discrete data
-#'    "inclusive" means to floor the target rank down to the next whole rank
+#'    "Inclusive" means to floor the target rank down to the next whole rank
 #'      (will always return at least one case if percentile < 1)
-#'    "exclusive" means to ceiling the target rank up to the next whole rank
-#'    "min_error" mean to choose the target rank by minimizing the distance to the 
+#'    "Exclusive" means to ceiling the target rank up to the next whole rank
+#'    "Closest" means to choose the target rank by minimizing the distance to the 
 #'    desired percentile
-#'    Note: 'exclusive' and 'min_error' can return Inf
+#'    Note: 'Exclusive' and 'Closest' can return Inf
 
-empirical_quantile <- function(x, percentile, mode="min_error") {
+empirical_quantile <- function(x, percentile, mode="Closest") {
+  
+  # drop NAs
+  x = x[!is.na(x)]
   
   # sort in descending order
   x = x[order(x, decreasing=TRUE)]
   
   target_rank = ((1 - percentile) * length(x))
   
-  if (mode == "exclusive") {
+  if (mode == "Exclusive") {
     target_rank = floor(target_rank)
-  } else if (mode == "inclusive") {
+  } else if (mode == "Inclusive") {
     target_rank = ceiling(target_rank)
-  } else if (mode == "min_error") {
+  } else if (mode == "Closest") {
     target_rank = round(target_rank, 0)
   }
   
   # make the function return Inf instead of numeric(0) if no scores qualify
-  #  this will only happen in mode="exclusive" or "min_error"
+  #  this will only happen in mode="Exclusive" or "Closest"
   if (identical(x[target_rank], numeric(0))) {
     return(Inf)
   } else {
     return(x[target_rank])
   }
 }
-  
 
+
+#' Title
+#'
+#' @param data 
+#' @param colname 
+#' @param percentile 
+#' @param mode 
+#'
+#' @return
+
+empirical_quantile_df = function(data, colname, percentile, mode="Closest") {
+  
+  x = as.numeric(unlist(data[[colname]]))
+  
+  return(empirical_quantile(x=x, percentile=percentile, mode=mode))
+}
   
   
 
 # define function for assigning gifted status based on optimal id
+#' Title
+#'
+#' @param data 
+#' @param assessments 
+#' @param nom 
+#' @param nom_cutoff 
+#' @param test_cutoff 
+#' @param mode 
+#' @param listwise 
+#' @param weights 
+#' @param local_norm 
+#' @param local_norm_type 
+#' @param norm_group 
+#'
+#' @return
+
 identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
                           mode = "decisions", listwise=TRUE, weights = NA, 
-                          local_norm = FALSE, local_norm_type = "min_error") {
-
+                          local_norm = FALSE, local_norm_type = "Closest",
+                          norm_group = NULL) {
+  
   if (mode %!in% c("decisions", "meanscores")) {
     stop("argument 'mode' must be one of 'decisions' or 'meanscores'")
   }
   
   if (local_norm == TRUE & local_norm_type %!in% 
-      c("inclusive", "exclusive", "min_error")) {
-        stop("if local_norms=TRUE, local_norm_type must be one of 'inclusive', 'exclusive', 'min_error'")
+      c("Inclusive", "Exclusive", "Closest")) {
+        stop("if local_norms=TRUE, local_norm_type must be one of 'Inclusive', 'Exclusive', 'Closest'")
         }
   
   if (local_norm == FALSE) {
     # calculate nomination cutoff at normal density percentile
     nom_cutoff_val = qnorm(nom_cutoff)
+  
+  } else if (local_norm == TRUE & is.null(norm_group)) {
     
-  } else if (local_norm == TRUE) {
     nom_cutoff_val = empirical_quantile(x=data[[nom]], 
                                         percentile=nom_cutoff, 
                                         mode=local_norm_type)
     
+  } else if (local_norm == TRUE & !is.null(norm_group)) {
+    
+      data_grp = split(x=data, f=as.formula(paste0("~", norm_group)))
+      
+      nom_cutoff_list = lapply(data_grp, empirical_quantile_df, colname=nom, 
+                               percentile=nom_cutoff, 
+                               mode=local_norm_type)
+      
   }
   
   
@@ -216,25 +260,67 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
       var_shrinkage_factor = var_mean(r=r, w=w)
   } else {var_shrinkage_factor = 1}
   
+  
   if (local_norm == FALSE) {
+    
     test_cutoff_val = qnorm(test_cutoff, 0, 
                             sd=sqrt(var_shrinkage_factor*var(meanscore, na.rm=TRUE)))
     
-  } else if (local_norm == TRUE) {
+  } else if (local_norm == TRUE & is.null(norm_group)) {
+    
+    test_cutoff_val = empirical_quantile(x=meanscore, 
+                                        percentile=test_cutoff, 
+                                        mode=local_norm_type)
+    
+  } else if (local_norm == TRUE & !is.null(norm_group)) {
+    
+    data[['meanscore']] = meanscore
+    
+    data_grp = split(x=data, f=as.formula(paste0("~", norm_group)))
+    
+    
+    test_cutoff_list = lapply(data_grp, empirical_quantile_df, colname="meanscore", 
+                             percentile=test_cutoff, 
+                             mode=local_norm_type)
+    
+  }
+  
+  if (local_norm == TRUE) {
     test_cutoff_val = empirical_quantile(x=meanscore, 
                                         percentile=test_cutoff, 
                                         mode=local_norm_type)
   }
     
-  # shrinkage-adjusted cutoff
-  opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)
+  if (local_norm == FALSE | is.null(norm_group)) {
+    
+    opti_gifted <- (data[, nom] >= nom_cutoff_val) & (meanscore >= test_cutoff_val)
+    
+  } else if (local_norm == TRUE & !is.null(norm_group)) {
+    
+    data = data.table(data)
+    
+    for (g in unique(data[[norm_group]])) {
+      
+      data[get(norm_group) == g & 
+             get(nom) >= nom_cutoff_list[[g]] & 
+             get("meanscore") >= test_cutoff_list[[g]], opti_gifted := TRUE]
+      
+      }
+    
+    data[is.na(opti_gifted), opti_gifted := FALSE]
+    
+    opti_gifted = data[["opti_gifted"]]
+  }
+    
   
   if (mode == "decisions") {
-    return(opti_gifted)
+    return(as.logical(opti_gifted))
   } else if (mode == "meanscores") {
     return(meanscore)
   }
 }
+
+
 
 # define function for assigning gifted status based on optimal id using an empirical percentile
 identify_opti_empirical <- function(data, assessments, nom, nom_cutoff, test_cutoff,
@@ -755,6 +841,25 @@ get_equity_multi <- function(data, group, reference_grp,
         if (is.null(pathways[[i]][['listwise']])) {
             pathways[[i]][['listwise']] = TRUE
         } 
+      
+        # check if local_norm was specified for this list entry, 
+        #  if not default it to FALSE
+        if (is.null(pathways[[i]][['local_norm']])) {
+          pathways[[i]][['local_norm']] = FALSE
+        } 
+      
+        # check if local_norm_type was specified for this list entry, 
+        #  if not default it to 'min_error'
+        if (is.null(pathways[[i]][['local_norm_type']])) {
+          pathways[[i]][['local_norm_type']] = 'min_error'
+        } 
+      
+        # check if local norm group was specified for this list entry, 
+        #  if not default it to NULL
+        if (is.null(pathways[[i]][['norm_group']])) {
+          pathways[[i]][['norm_group']] = NULL
+        } 
+        
 
         data[paste0(opti_prefix, "_", pathway_name[i])] <- identify_opti(
             data = data, 
@@ -764,7 +869,10 @@ get_equity_multi <- function(data, group, reference_grp,
             test_cutoff = pathways[[i]][['test_cutoff']], 
             listwise=pathways[[i]][['listwise']],
             weights=pathways[[i]][['weights']],
-            mode="decisions"
+            mode="decisions",
+            local_norm=pathways[[i]][['local_norm']],
+            local_norm_type=pathways[[i]][['local_norm_type']],
+            norm_group=pathways[[i]][['norm_group']]
         )
     }
 

@@ -21,8 +21,8 @@ library(DT)
 library(DescTools)
 library(readxl)
 library(markdown)
+library(data.table)
 library(giftedCalcs)
-
 
 
 # import functions
@@ -422,10 +422,13 @@ ui <- fluidPage(
                                 conditionalPanel(
                                   condition = "input.local_norm",
                                   
+                                  # the conflicting options for multiple
+                                  #  and maxItmes is a hack to prevent the control
+                                  #  from defaulting to the first variable
                                   selectizeInput(
                                     inputId = "local_norm_grp", 
                                     label = "Grouping for local norm", 
-                                    multiple = FALSE,
+                                    multiple = TRUE,
                                     choices = NULL,
                                     options=list(maxItems=1)
                                   ),
@@ -434,10 +437,10 @@ ui <- fluidPage(
                                     inputId = "local_norm_type",
                                     label = "Local norm tolerance",
                                     choices = list(
-                                      "inclusive",
-                                      "exclusive",
-                                      "min_error"),
-                                    selected = "Nearest",
+                                      "Inclusive",
+                                      "Exclusive",
+                                      "Closest"),
+                                    selected = "Closest",
                                     multiple=FALSE
                                   ),
                                   
@@ -632,7 +635,7 @@ ui <- fluidPage(
                                   selectizeInput(
                                     inputId = "local_norm_grp2", 
                                     label = "Grouping for local norm", 
-                                    multiple = FALSE,
+                                    multiple = TRUE,
                                     choices = NULL,
                                     options=list(maxItems=1)
                                   ),
@@ -641,10 +644,10 @@ ui <- fluidPage(
                                     inputId = "local_norm_type2",
                                     label = "Local norm identification rule",
                                     choices = list(
-                                      "inclusive",
-                                      "exclusive",
-                                      "min_error"),
-                                    selected = "Nearest",
+                                      "Inclusive",
+                                      "Exclusive",
+                                      "Closest"),
+                                    selected = "Closest",
                                     multiple=FALSE
                                   ),
                                   
@@ -838,7 +841,7 @@ ui <- fluidPage(
                                   selectizeInput(
                                     inputId = "local_norm_grp3", 
                                     label = "Grouping for local norm", 
-                                    multiple = FALSE,
+                                    multiple = TRUE,
                                     choices = NULL,
                                     options=list(maxItems=1)
                                   ),
@@ -847,10 +850,10 @@ ui <- fluidPage(
                                     inputId = "local_norm_type3",
                                     label = "Local norm identification rule",
                                     choices = list(
-                                      "inclusive",
-                                      "exclusive",
-                                      "min_error"),
-                                    selected = "Nearest",
+                                      "Inclusive",
+                                      "Exclusive",
+                                      "Closest"),
+                                    selected = "Closest",
                                     multiple=FALSE
                                   ),
                                   
@@ -1042,7 +1045,7 @@ ui <- fluidPage(
                                   selectizeInput(
                                     inputId = "local_norm_grp4", 
                                     label = "Grouping for local norm", 
-                                    multiple = FALSE,
+                                    multiple = TRUE,
                                     choices = NULL,
                                     options=list(maxItems=1)
                                   ),
@@ -1051,10 +1054,10 @@ ui <- fluidPage(
                                     inputId = "local_norm_type4",
                                     label = "Local norm identification rule",
                                     choices = list(
-                                      "inclusive",
-                                      "exclusive",
-                                      "min_error"),
-                                    selected = "Nearest",
+                                      "Inclusive",
+                                      "Exclusive",
+                                      "Closest"),
+                                    selected = "Closest",
                                     multiple=FALSE
                                   ),
                                   
@@ -1660,7 +1663,7 @@ server <- function(input, output, session) {
       inputId = "filter_group", 
       choices = variable_names()
     )
-    # PPP
+
     updateSelectInput(
       session = session, 
       inputId = "local_norm_grp", 
@@ -1897,7 +1900,8 @@ server <- function(input, output, session) {
                                          mode = "meanscores", 
                                          weights = weights$w[1:length(input$assessments)],
                                          local_norm=input$local_norm,
-                                         local_norm_type=input$local_norm_type)
+                                         local_norm_type=input$local_norm_type,
+                                         norm_group=input$local_norm_grp)
         
         
         # construct the descriptive statistics table and load it into
@@ -1928,7 +1932,10 @@ server <- function(input, output, session) {
                                       nom=input$nom,
                                       nom_cutoff=input$nom_cutoff,
                                       test_cutoff=input$mean_cutoff,
-                                      weights=weights$w[1:length(input$assessments)])
+                                      weights=weights$w[1:length(input$assessments)],
+                                      local_norm=input$local_norm,
+                                      local_norm_type=input$local_norm_type,
+                                      norm_group=input$local_norm_grp)
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric,
@@ -1965,7 +1972,10 @@ server <- function(input, output, session) {
                                           test_cutoff=input$mean_cutoff2,
                                           listwise=listwise$listwise,
                                           mode = "meanscores", 
-                                          weights = weights$w2[1:length(input$assessments2)])
+                                          weights = weights$w2[1:length(input$assessments2)],
+                                          local_norm=input$local_norm2,
+                                          local_norm_type=input$local_norm_type2,
+                                          norm_group=input$local_norm_grp2)
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
@@ -1995,7 +2005,10 @@ server <- function(input, output, session) {
                                       nom=input$nom2,
                                       nom_cutoff=input$nom_cutoff2,
                                       test_cutoff=input$mean_cutoff2,
-                                      weights=weights$w2[1:length(input$assessments2)])
+                                      weights=weights$w2[1:length(input$assessments2)],
+                                      local_norm=input$local_norm2,
+                                      local_norm_type=input$local_norm_type2,
+                                      norm_group=input$local_norm_grp2)
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric2,
@@ -2033,7 +2046,10 @@ server <- function(input, output, session) {
                                           test_cutoff=input$mean_cutoff3,
                                           listwise=listwise$listwise,
                                           mode = "meanscores", 
-                                          weights = weights$w3[1:length(input$assessments3)])
+                                          weights = weights$w3[1:length(input$assessments3)],
+                                          local_norm=input$local_norm3,
+                                          local_norm_type=input$local_norm_type3,
+                                          norm_group=input$local_norm_grp3)
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
@@ -2063,7 +2079,10 @@ server <- function(input, output, session) {
                                       nom=input$nom3,
                                       nom_cutoff=input$nom_cutoff3,
                                       test_cutoff=input$mean_cutoff3,
-                                      weights=weights$w3[1:length(input$assessments3)])
+                                      weights=weights$w3[1:length(input$assessments3)],
+                                      local_norm=input$local_norm3,
+                                      local_norm_type=input$local_norm_type3,
+                                      norm_group=input$local_norm_grp3)
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric3,
@@ -2100,7 +2119,10 @@ server <- function(input, output, session) {
                                           test_cutoff=input$mean_cutoff4,
                                           listwise=listwise$listwise,
                                           mode = "meanscores", 
-                                          weights = weights$w4[1:length(input$assessments4)])
+                                          weights = weights$w4[1:length(input$assessments4)],
+                                          local_norm=input$local_norm4,
+                                          local_norm_type=input$local_norm_type4,
+                                          norm_group=input$local_norm_grp4)
         
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
@@ -2130,7 +2152,10 @@ server <- function(input, output, session) {
                                       nom=input$nom4,
                                       nom_cutoff=input$nom_cutoff4,
                                       test_cutoff=input$mean_cutoff4,
-                                      weights=weights$w4[1:length(input$assessments4)])
+                                      weights=weights$w4[1:length(input$assessments4)],
+                                      local_norm=input$local_norm4,
+                                      local_norm_type=input$local_norm_type4,
+                                      norm_group=input$local_norm_grp4)
                                     ),
                                     baseline_id_var=input$baseline_id_var,
                                     plot_metric=input$metric4,
@@ -2447,6 +2472,21 @@ output$btn_report <- downloadHandler(
       nom2=input$nom2,
       nom3=input$nom3,
       nom4=input$nom4,
+      
+      local_norm1=input$local_norm,
+      local_norm2=input$local_norm2,
+      local_norm3=input$local_norm3,
+      local_norm4=input$local_norm4,
+      
+      local_norm_type=input$local_norm_type,
+      local_norm_type=input$local_norm_type2,
+      local_norm_type=input$local_norm_type3,
+      local_norm_type=input$local_norm_type4,
+      
+      local_norm_grp1=input$local_norm_grp,
+      local_norm_grp2=input$local_norm_grp2,
+      local_norm_grp3=input$local_norm_grp3,
+      local_norm_grp4=input$local_norm_grp4,
       
       nom_cutoff1=input$nom_cutoff,
       nom_cutoff2=input$nom_cutoff2,
