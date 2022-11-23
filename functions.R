@@ -649,6 +649,33 @@ calc_CramerV <- function(eq_tbl, group, total_var, target_vars) {
   return(result)
 }
 
+calc_missing_rate <- function(data, group, nom, assessments, colname) {
+  
+  
+  missing_flag <- data %>% select(c(nom, assessments)) %>% rowSums() %>% is.na()
+  
+  data$complete_flag = 1-missing_flag
+  
+  summary_tbl = data %>% group_by_at(group) %>% 
+    summarize(.groups="keep", total_n=n(), complete_n=sum(complete_flag))
+  
+  summary_tbl$missing_rate = 1 - (summary_tbl$complete_n / summary_tbl$total_n)
+  
+  summary_long = summary_tbl %>% pivot_longer(cols=c("missing_rate"))
+  
+  names(summary_long) = c(group, "total_n", "complete_n", "metric", "value")
+  
+  summary_long <- summary_long %>% select(-c("total_n", "complete_n"))
+  
+  summary_long$comparison = colname
+  
+  
+  
+  return(summary_long)
+}
+  
+
+  
 
 equity_table_to_long <- function(eq_tbl, group=NA, total_var, target_vars) {
   
@@ -696,6 +723,11 @@ get_equity <- function(data, group, reference_grp, assessments, listwise, nom,
     group = group
   )
   
+  # calculate missing data rate
+  t0 = calc_missing_rate(
+    data = data, group = group, nom = nom, assessments = assessments
+  )
+  
   # now calculate all the metrics we want to report
   t1 <- calc_change(
     eq_tbl = eq_tbl, group = group, baseline = baseline_id_var,
@@ -733,7 +765,7 @@ get_equity <- function(data, group, reference_grp, assessments, listwise, nom,
   )
   
   # stack sub-results
-  out = bind_rows(t2, t1, t3, t4, t5, t6, t7)
+  out = bind_rows(t0, t2, t1, t3, t4, t5, t6, t7)
   
   # reorder cols
   out = out[, c(group, "metric", "baseline", "comparison", "value")]
@@ -774,12 +806,15 @@ equity_plot = function(data,
     1, max) | summary_tbl$metric == 'CramerV', ]
   
   terse_metric = dplyr::case_when(
+    plot_metric == 'Missing rate' ~ 'missing_rate',
     plot_metric == 'Count' ~ 'count',
     plot_metric == 'Representation Index' ~ 'RI',
     plot_metric == 'Relative Risk' ~ 'RR',
     plot_metric == 'Proportion Identified' ~ 'pct_identified',
     plot_metric == "Cramer's V"~ 'CramerV'
   )
+  
+
   
   p = ggplot(data=dplyr::filter(summary_tbl, metric==terse_metric), 
              aes(x=comparison, y=value, fill=comparison))+
@@ -795,7 +830,7 @@ equity_plot = function(data,
     labs(fill=NULL)
   
   if (length(group)==1) {
-    if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+    if (terse_metric %in% c('missing_rate', 'RR', 'logit', 'RI_ratio')) {
       p = p + facet_wrap(vars(get(group)))
     } else if (terse_metric != 'CramerV') {
       p = p + facet_wrap(vars(get(group)), scales="free_y")
@@ -803,7 +838,7 @@ equity_plot = function(data,
   }
   
   if (length(group)==2) {
-    if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+    if (terse_metric %in% c('missing_rate', 'RR', 'logit', 'RI_ratio')) {
       p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])))
     } else if (terse_metric != 'CramerV') {
       p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])), 
@@ -896,8 +931,17 @@ get_equity_multi <- function(data, group, reference_grp,
             data = data, id_var = c(baseline_id_var, new_colnames[i]),
             group = group
         )
-        
+
         # now calculate all the metrics we want to report
+        if (i %in% 1:length(pathways)) {
+          t0 <- calc_missing_rate(
+            data = data, group = group,
+            nom = pathways[[i]][['nom']],
+            assessments = pathways[[i]][['assessments']],
+            colname = new_colnames[i]
+          )
+        }
+        
         t1 <- calc_change(
             eq_tbl = eq_tbl, group = group, baseline = baseline_id_var,
             comparison = new_colnames[i]
@@ -938,6 +982,10 @@ get_equity_multi <- function(data, group, reference_grp,
 
         # stack sub-results
         out = bind_rows(t2, t1, t3, t4, t5, t6, t7)
+        
+        if (i %in% 1:length(pathways)) {
+          out = bind_rows(t0, out)
+        }
 
         # reorder cols
         output[[new_colnames[i]]] = out[, c(
@@ -975,13 +1023,14 @@ equity_plot_multi = function(data,
         1, max) | summary_tbl$metric == 'CramerV', ]
     
     terse_metric = dplyr::case_when(
+        plot_metric == 'Missing rate' ~ 'missing_rate',
         plot_metric == 'Count' ~ 'count',
         plot_metric == 'Representation Index' ~ 'RI',
         plot_metric == 'Relative Risk' ~ 'RR',
         plot_metric == 'Proportion Identified' ~ 'pct_identified',
         plot_metric == "Cramer's V"~ 'CramerV'
     )
-    
+  
     p = ggplot(data=dplyr::filter(summary_tbl, metric==terse_metric), 
                aes(x=comparison, y=value, fill=comparison))+
         geom_bar(stat="identity", alpha=.65)+
@@ -996,7 +1045,7 @@ equity_plot_multi = function(data,
         labs(fill=NULL)
     
     if (length(group)==1) {
-        if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+        if (terse_metric %in% c('missing_rate', 'RR', 'logit', 'RI_ratio')) {
             p = p + facet_wrap(vars(get(group)))
         } else if (terse_metric != 'CramerV') {
             p = p + facet_wrap(vars(get(group)), scales="free_y")
@@ -1004,7 +1053,7 @@ equity_plot_multi = function(data,
     }
     
     if (length(group)==2) {
-        if (terse_metric %in% c('RR', 'logit', 'RI_ratio')) {
+        if (terse_metric %in% c('missing_rate', 'RR', 'logit', 'RI_ratio')) {
             p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])))
         } else if (terse_metric != 'CramerV') {
             p = p + facet_grid(rows=vars(get(group[1])), cols=vars(get(group[2])), 
@@ -1054,7 +1103,7 @@ process_equity_tbl <- function(tbl, group, pathway_lbl, pathway_num) {
   
   tbl_wide = pivot_wider(
     dplyr::filter(tbl_long, metric %in%
-                    c("count", "pct_identified", "RI", "RR", "CramerV")),
+                    c("missing_rate", "count", "pct_identified", "RI", "RR", "CramerV")),
     names_from=c("metric"))
   
   if (length(group) == 1) {

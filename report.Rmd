@@ -51,8 +51,25 @@ params:
   mean_cutoff3: NA
   mean_cutoff4: NA
   
+  local_norm1: NA
+  local_norm2: NA
+  local_norm3: NA
+  local_norm4: NA
+  
+  local_norm_type1: NA
+  local_norm_type2: NA
+  local_norm_type3: NA
+  local_norm_type4: NA
+  
+  local_norm_grp1: NA
+  local_norm_grp2: NA
+  local_norm_grp3: NA
+  local_norm_grp4: NA
+      
   baseline_id_var: NA
   group_stats_tbl: NA
+  
+  
 
 ---
 
@@ -150,6 +167,9 @@ pathways = list()
 
 pathways = append(pathways, list(pathway_1 = list(
     assessments=params$assessments1,
+    local_norm=params$local_norm1,
+    local_norm_type=params$local_norm_type1,
+    norm_group=params$local_norm_group1,
     listwise=params$listwise,
     nom=params$nom1,
     nom_cutoff=params$nom_cutoff1,
@@ -164,6 +184,9 @@ if (params$last_pathway >= 2 & !is.null(params$assessments2) &
 
     pathways = append(pathways, list(pathway_2 = list(
         assessments=params$assessments2,
+        local_norm=params$local_norm2,
+        local_norm_type=params$local_norm_type2,
+        norm_group=params$local_norm_group2,
         listwise=params$listwise,
         nom=params$nom2,
         nom_cutoff=params$nom_cutoff2,
@@ -178,6 +201,9 @@ if (params$last_pathway >= 3 & !is.null(params$assessments3) &
 
     pathways = append(pathways, list(pathway_3 = list(
         assessments=params$assessments3,
+        local_norm=params$local_norm3,
+        local_norm_type=params$local_norm_type3,
+        norm_group=params$local_norm_group3,
         listwise=params$listwise,
         nom=params$nom3,
         nom_cutoff=params$nom_cutoff3,
@@ -192,6 +218,9 @@ if (params$last_pathway >= 4 & !is.null(params$assessments4) &
 
     pathways = append(pathways, list(pathway_4 = list(
         assessments=params$assessments4,
+        local_norm=params$local_norm4,
+        local_norm_type=params$local_norm_type4,
+        norm_group=params$local_norm_group4,
         listwise=params$listwise,
         nom=params$nom4,
         nom_cutoff=params$nom_cutoff4,
@@ -236,14 +265,26 @@ settings_tbl %>% flextable() %>% autofit() %>% theme_zebra() %>% set_caption(
 if (params$last_pathway >= 1 & !is.null(params$assessments1) & 
     !is.null(params$nom1)) {
   
+  if (params$local_norm1 == FALSE) {
+    local_norm_type1 = NULL
+  } else {
+    local_norm_type1 = params$local_norm_type1
+  }
+  
   pathway1_tbl = data.frame(
     Parameter = c('Pathway name',
+                  'Local norm?',
+                  'Local norm group',
+                  'Local norm type',
                   'Nomination (phase-1) assessment', 
                   'Nomination (phase-1) percentile cutoff', 
                   'Phase-2 assessments',
                   'Phase-2 assessment weights',
                   'Phase-2 percentile cutoff'),
     Setting = c(toString(params$pathway_name1), 
+                toString(params$local_norm1),
+                toString(params$local_norm_grp1),
+                toString(local_norm_type1),
                 toString(params$nom1),
                 toString(params$nom_cutoff1),
                 toString(params$assessments1),
@@ -268,14 +309,26 @@ if (params$last_pathway >= 1 & !is.null(params$assessments1) &
 if (params$last_pathway >= 2 & !is.null(params$assessments2) & 
     !is.null(params$nom2)) {
   
+  if (params$local_norm2 == FALSE) {
+    local_norm_type2 = NULL
+  } else {
+    local_norm_type2 = params$local_norm_type2
+  }
+  
   pathway2_tbl = data.frame(
     Parameter = c('Pathway name',
+                  'Local norm?',
+                  'Local norm group',
+                  'Local norm type',
                   'Nomination (phase-1) assessment', 
                   'Nomination (phase-1) percentile cutoff', 
                   'Phase-2 assessments',
                   'Phase-2 assessment weights',
                   'Phase-2 percentile cutoff'),
     Setting = c(toString(params$pathway_name2), 
+                toString(params$local_norm2),
+                toString(params$local_norm_grp2),
+                toString(local_norm_type2),
                 toString(params$nom2),
                 toString(params$nom_cutoff2),
                 toString(params$assessments2),
@@ -300,14 +353,26 @@ if (params$last_pathway >= 2 & !is.null(params$assessments2) &
 if (params$last_pathway >= 3 & !is.null(params$assessments3) & 
     !is.null(params$nom3)) {
   
+  if (params$local_norm3 == FALSE) {
+    local_norm_type3 = NULL
+  } else {
+    local_norm_type3 = params$local_norm_type3
+  }
+  
   pathway3_tbl = data.frame(
     Parameter = c('Pathway name',
+                  'Local norm?',
+                  'Local norm group',
+                  'Local norm type',
                   'Nomination (phase-1) assessment', 
                   'Nomination (phase-1) percentile cutoff', 
                   'Phase-2 assessments',
                   'Phase-2 assessment weights',
                   'Phase-2 percentile cutoff'),
     Setting = c(toString(params$pathway_name3), 
+                toString(params$local_norm3),
+                toString(params$local_norm_grp3),
+                toString(local_norm_type3),
                 toString(params$nom3),
                 toString(params$nom_cutoff3),
                 toString(params$assessments3),
@@ -333,14 +398,26 @@ if (params$last_pathway >= 3 & !is.null(params$assessments3) &
 if (params$last_pathway >= 4 & !is.null(params$assessments4) & 
     !is.null(params$nom4)) {
   
+  if (params$local_norm4 == FALSE) {
+    local_norm_type4 = NULL
+  } else {
+    local_norm_type4 = params$local_norm_type4
+  }
+  
   pathway4_tbl = data.frame(
     Parameter = c('Pathway name',
+                  'Local norm?',
+                  'Local norm group',
+                  'Local norm type',
                   'Nomination (phase-1) assessment', 
                   'Nomination (phase-1) percentile cutoff', 
                   'Phase-2 assessments',
                   'Phase-2 assessment weights',
                   'Phase-2 percentile cutoff'),
     Setting = c(toString(params$pathway_name4), 
+                toString(params$local_norm4),
+                toString(params$local_norm_grp4),
+                toString(local_norm_type4),
                 toString(params$nom4),
                 toString(params$nom_cutoff4),
                 toString(params$assessments4),
@@ -449,9 +526,8 @@ if (!is.null(params$group_stats_tbl)) {
 
 
 
-metrics = c("Count", "Representation Index", "Proportion Identified",
+metrics = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
                         "Relative Risk")
-
 
 paths = if(params$last_pathway == 1) {               
                1} else {
@@ -460,6 +536,12 @@ paths = if(params$last_pathway == 1) {
 
 
 plot_params = expand_grid(metrics, paths)
+
+# remove the row for "missing_rate" and any_pathway, it doesn't exist
+plot_params = plot_params[!(plot_params$metrics == 'Missing rate' & 
+                              plot_params$paths == max(paths) & 
+                              max(plot_params$paths) > 1),]
+
 
 plots = mapply(equity_plot_multi, 
                plot_metric = plot_params[["metrics"]],
@@ -508,7 +590,7 @@ if (length(plots) >= 4) {
 
 <br>
 
-```{r, plot21}
+```{r plot15}
 if (length(plots) >= 5) {
   plots[[5]]$p
 }
@@ -516,7 +598,7 @@ if (length(plots) >= 5) {
 
 <br>
 
-```{r plot22}
+```{r, plot21}
 if (length(plots) >= 6) {
   plots[[6]]$p
 }
@@ -524,7 +606,7 @@ if (length(plots) >= 6) {
 
 <br>
 
-```{r plot23}
+```{r plot22}
 if (length(plots) >= 7) {
   plots[[7]]$p
 }
@@ -532,7 +614,7 @@ if (length(plots) >= 7) {
 
 <br>
 
-```{r plot24}
+```{r plot23}
 if (length(plots) >= 8) {
   plots[[8]]$p
 }
@@ -540,7 +622,7 @@ if (length(plots) >= 8) {
 
 <br>
 
-```{r plot31}
+```{r plot24}
 if (length(plots) >= 9) {
   plots[[9]]$p
 }
@@ -548,15 +630,16 @@ if (length(plots) >= 9) {
 
 <br>
 
-```{r plot32}
+```{r plot25}
 if (length(plots) >= 10) {
   plots[[10]]$p
 }
 ```
 
+
 <br>
 
-```{r plot33}
+```{r plot31}
 if (length(plots) >= 11) {
   plots[[11]]$p
 }
@@ -564,7 +647,7 @@ if (length(plots) >= 11) {
 
 <br>
 
-```{r plot34}
+```{r plot32}
 if (length(plots) >= 12) {
   plots[[12]]$p
 }
@@ -572,7 +655,7 @@ if (length(plots) >= 12) {
 
 <br>
 
-```{r plot41}
+```{r plot33}
 if (length(plots) >= 13) {
   plots[[13]]$p
 }
@@ -580,7 +663,7 @@ if (length(plots) >= 13) {
 
 <br>
 
-```{r plot42}
+```{r plot34}
 if (length(plots) >= 14) {
   plots[[14]]$p
 }
@@ -588,7 +671,7 @@ if (length(plots) >= 14) {
 
 <br>
 
-```{r plot43}
+```{r plot35}
 if (length(plots) >= 15) {
   plots[[15]]$p
 }
@@ -596,7 +679,7 @@ if (length(plots) >= 15) {
 
 <br>
 
-```{r plot44}
+```{r plot41}
 if (length(plots) >= 16) {
   plots[[16]]$p
 }
@@ -604,7 +687,7 @@ if (length(plots) >= 16) {
 
 <br>
 
-```{r plot51}
+```{r plot42}
 if (length(plots) >= 17) {
   plots[[17]]$p
 }
@@ -612,7 +695,7 @@ if (length(plots) >= 17) {
 
 <br>
 
-```{r plot52}
+```{r plot43}
 if (length(plots) >= 18) {
   plots[[18]]$p
 }
@@ -620,7 +703,7 @@ if (length(plots) >= 18) {
 
 <br>
 
-```{r plot53}
+```{r plot44}
 if (length(plots) >= 19) {
   plots[[19]]$p
 }
@@ -628,9 +711,41 @@ if (length(plots) >= 19) {
 
 <br>
 
-```{r plot54}
+```{r plot45}
 if (length(plots) >= 20) {
   plots[[20]]$p
+}
+```
+
+<br>
+
+```{r plot51}
+if (length(plots) >= 21) {
+  plots[[21]]$p
+}
+```
+
+<br>
+
+```{r plot52}
+if (length(plots) >= 22) {
+  plots[[22]]$p
+}
+```
+
+<br>
+
+```{r plot53}
+if (length(plots) >= 23) {
+  plots[[23]]$p
+}
+```
+
+<br>
+
+```{r plot54}
+if (length(plots) >= 24) {
+  plots[[24]]$p
 }
 ```
 

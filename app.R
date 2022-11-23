@@ -458,9 +458,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric", 
                                   label = "Equity metric", 
-                                  choices = c("Count", "Representation Index", "Proportion Identified", 
+                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified", 
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Count"),
+                                  selected = "Missing rate"),
                                 
                                 HTML("<br>"),
                                 
@@ -665,9 +665,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric2",
                                   label = "Equity metric",
-                                  choices = c("Count", "Representation Index", "Proportion Identified",
+                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Count"),
+                                  selected = "Missing rate"),
                                 
                                 HTML("<br>"),
                                 
@@ -869,9 +869,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric3",
                                   label = "Equity metric",
-                                  choices = c("Count", "Representation Index", "Proportion Identified",
+                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Count"),
+                                  selected = "Missing rate"),
                                 
                                 HTML("<br>"),
                                 
@@ -1073,9 +1073,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric4",
                                   label = "Equity metric",
-                                  choices = c("Count", "Representation Index", "Proportion Identified",
+                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Count"),
+                                  selected = "Missing rate"),
                                 
                                 HTML("<br>"),
                                 
@@ -2143,7 +2143,7 @@ server <- function(input, output, session) {
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
-        results = equity_plot_multi(data=mydata, #dat()
+        results = equity_plot_multi(data=mydata, 
                                     group=input$group,
                                     reference_grp=filter_string,
                                     pathways=list(pathway_4 = list(
@@ -2204,7 +2204,10 @@ server <- function(input, output, session) {
           nom=input$nom,
           nom_cutoff=input$nom_cutoff,
           test_cutoff=input$mean_cutoff,
-          weights=weights$w[1:length(input$assessments)])
+          weights=weights$w[1:length(input$assessments)],
+          local_norm=input$local_norm,
+          local_norm_type=input$local_norm_type,
+          norm_group=input$local_norm_grp)
         )
         )
         
@@ -2218,7 +2221,10 @@ server <- function(input, output, session) {
             nom=input$nom2,
             nom_cutoff=input$nom_cutoff2,
             test_cutoff=input$mean_cutoff2,
-            weights=weights$w2[1:length(input$assessments2)])
+            weights=weights$w2[1:length(input$assessments2)],
+            local_norm=input$local_norm2,
+            local_norm_type=input$local_norm_type2,
+            norm_group=input$local_norm_grp2)
           )
           )
         }
@@ -2232,7 +2238,10 @@ server <- function(input, output, session) {
             nom=input$nom3,
             nom_cutoff=input$nom_cutoff3,
             test_cutoff=input$mean_cutoff3,
-            weights=weights$w3[1:length(input$assessments3)])
+            weights=weights$w3[1:length(input$assessments3)],
+            local_norm=input$local_norm3,
+            local_norm_type=input$local_norm_type3,
+            norm_group=input$local_norm_grp3)
           )
           )
         }
@@ -2246,7 +2255,10 @@ server <- function(input, output, session) {
             nom=input$nom4,
             nom_cutoff=input$nom_cutoff4,
             test_cutoff=input$mean_cutoff4,
-            weights=weights$w4[1:length(input$assessments4)])
+            weights=weights$w4[1:length(input$assessments4)],
+            local_norm=input$local_norm4,
+            local_norm_type=input$local_norm_type4,
+            norm_group=input$local_norm_grp4)
           )
           )
         }
@@ -2303,7 +2315,10 @@ server <- function(input, output, session) {
         nom=input$nom,
         nom_cutoff=input$nom_cutoff,
         test_cutoff=input$mean_cutoff,
-        weights=weights$w[1:length(input$assessments)])
+        weights=weights$w[1:length(input$assessments)],
+        local_norm=input$local_norm,
+        local_norm_type=input$local_norm_type,
+        norm_group=input$local_norm_grp)
       )
       )
       
@@ -2317,7 +2332,10 @@ server <- function(input, output, session) {
           nom=input$nom2,
           nom_cutoff=input$nom_cutoff2,
           test_cutoff=input$mean_cutoff2,
-          weights=weights$w2[1:length(input$assessments2)])
+          weights=weights$w2[1:length(input$assessments2)],
+          local_norm=input$local_norm2,
+          local_norm_type=input$local_norm_type2,
+          norm_group=input$local_norm_grp2)
         )
         )
       }
@@ -2331,7 +2349,10 @@ server <- function(input, output, session) {
           nom=input$nom3,
           nom_cutoff=input$nom_cutoff3,
           test_cutoff=input$mean_cutoff3,
-          weights=weights$w3[1:length(input$assessments3)])
+          weights=weights$w3[1:length(input$assessments3)],
+          local_norm=input$local_norm3,
+          local_norm_type=input$local_norm_type3,
+          norm_group=input$local_norm_grp3)
         )
         )
       }
@@ -2345,7 +2366,10 @@ server <- function(input, output, session) {
           nom=input$nom4,
           nom_cutoff=input$nom_cutoff4,
           test_cutoff=input$mean_cutoff4,
-          weights=weights$w4[1:length(input$assessments4)])
+          weights=weights$w4[1:length(input$assessments4)],
+          local_norm=input$local_norm4,
+          local_norm_type=input$local_norm_type4,
+          norm_group=input$local_norm_grp4)
         )
         )
       }
@@ -2478,10 +2502,10 @@ output$btn_report <- downloadHandler(
       local_norm3=input$local_norm3,
       local_norm4=input$local_norm4,
       
-      local_norm_type=input$local_norm_type,
-      local_norm_type=input$local_norm_type2,
-      local_norm_type=input$local_norm_type3,
-      local_norm_type=input$local_norm_type4,
+      local_norm_type1=input$local_norm_type,
+      local_norm_type2=input$local_norm_type2,
+      local_norm_type3=input$local_norm_type3,
+      local_norm_type4=input$local_norm_type4,
       
       local_norm_grp1=input$local_norm_grp,
       local_norm_grp2=input$local_norm_grp2,
