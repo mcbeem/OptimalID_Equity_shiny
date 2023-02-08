@@ -430,7 +430,7 @@ ui <- fluidPage(
                                     label = "Grouping for local norm", 
                                     multiple = TRUE,
                                     choices = NULL,
-                                    options=list(maxItems=1)
+                                    options=list(maxItems=2)
                                   ),
                                   
                                   selectInput(
