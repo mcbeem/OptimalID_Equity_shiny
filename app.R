@@ -103,31 +103,11 @@ ui <- fluidPage(
                            ),
                            
                            helpText(
-                             "(Dataset should be prepared according to instructions",
+                             "Excel (.xlsx, .xls) and .csv files are supported.",
+                              "Only the first sheet will be read from an excel input file.",
+                             "Dataset should be prepared according to instructions",
                              a(href="https://r4ds.had.co.nz", target="_blank", "here)")
                            ),
-                           
-                           radioButtons(
-                             inputId = "fileType",
-                             label = "Type of file selected",
-                             inline = TRUE,
-                             choices = c("excel", "csv"),
-                             selected = "excel"
-                           ),
-                           
-                           conditionalPanel(
-                             condition = "input.fileType == 'excel'",
-                             
-                             numericInput(
-                               inputId = "whichSheet",
-                               label = "Select sheet for import",
-                               min = 1,
-                               max = 100,
-                               step = 1,
-                               value = 1
-                             )
-                           ),
-                           
                            
                            actionButton(
                              inputId = "loadFile",
@@ -1481,27 +1461,36 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
+    # get the file extension
+    file_extension <- tools::file_ext(infile$datapath)
+    
     # read the data
-    if (input$fileType == 'csv') {
-      mydata <- read.csv(infile$datapath, header = TRUE)
-    } else if (input$fileType == 'excel') {
-      mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
+    if (file_extension == 'csv') {
+      
+        mydata <- read.csv(infile$datapath, header = TRUE)
+        
+    } else if (file_extension %in% c('xls', 'xlsx')) {
+      
+      mydata <- read_excel(path=infile$datapath, sheet=1)
+      
     }
+
+    if (exists("mydata")) {
+      # append the 'overall' column
+      mydata$overall = 1
+      
+      # preview the loaded data
+      output$dat <- DT::renderDT(
+        mydata 
+      )
+      
+      # store the loaded data in the reactive objects
+      dat(mydata)
     
-    # append the 'overall' column
-    mydata$overall = 1
-    
-    # preview the loaded data
-    output$dat <- DT::renderDT(
-      mydata 
-    )
-    
-    # store the loaded data in the reactive objects
-    dat(mydata)
-  
-    
-    # add the datafile name to the reactive object (for display in the downloaded report)
-    upload_dataname$filename = basename(infile$name)
+      
+      # add the datafile name to the reactive object (for display in the downloaded report)
+      upload_dataname$filename = basename(infile$name)
+    }
     
   })
   
