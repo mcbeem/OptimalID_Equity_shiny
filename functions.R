@@ -201,7 +201,12 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
   if (local_norm == TRUE & local_norm_type %!in% 
       c("Inclusive", "Exclusive", "Closest")) {
         stop("if local_norms=TRUE, local_norm_type must be one of 'Inclusive', 'Exclusive', 'Closest'")
-        }
+  }
+  
+  # ensure that norm_group is a string, otherwise the indexing will fail
+  if (!is.null(norm_group)) {
+    data[[norm_group]] = as.character(data[[norm_group]])
+  }
   
   if (local_norm == FALSE) {
     # calculate nomination cutoff at normal density percentile
@@ -277,7 +282,6 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
     data[['meanscore']] = meanscore
     
     data_grp = split(x=data, f=as.formula(paste0("~", norm_group)))
-    
     
     test_cutoff_list = lapply(data_grp, empirical_quantile_df, colname="meanscore", 
                              percentile=test_cutoff, 
