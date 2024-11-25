@@ -318,7 +318,11 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
     
   
   if (mode == "decisions") {
-    return(as.logical(opti_gifted))
+      decisions = as.numeric(opti_gifted)
+      
+      # replace NA with FALSE -- NOT SURE IF WE WANT THIS
+      #decisions[is.na(decisions)] = 0
+      return(decisions)
   } else if (mode == "meanscores") {
     return(meanscore)
   }
@@ -550,7 +554,7 @@ calc_comparison_metrics <- function(eq_tbl, group, total_var, target_vars, refer
     ctable[[i]][, "pct_identified"] <- ctable[[i]][, target_vars[i]] / ctable[[i]][, total_var]
     ctable[[i]][, "odds"] <- ctable[[i]][, target_vars[i]] / ctable[[i]][, "non_identified"]
     
-    # get the pct_identified and odds for the referene group
+    # get the pct_identified and odds for the reference group
     ref_pct = ctable[[i]] %>% 
       dplyr::filter(eval(parse(text = reference_grp))) %>% 
       as.data.frame() %>% 
@@ -652,6 +656,8 @@ calc_CramerV <- function(eq_tbl, group, total_var, target_vars) {
   
   return(result)
 }
+
+
 
 calc_missing_rate <- function(data, group, nom, assessments, colname) {
   
@@ -1027,7 +1033,7 @@ equity_plot_multi = function(data,
         1, max) | summary_tbl$metric == 'CramerV', ]
     
     terse_metric = dplyr::case_when(
-        plot_metric == 'Missing rate' ~ 'missing_rate',
+        plot_metric == 'Missing Rate' ~ 'missing_rate',
         plot_metric == 'Count' ~ 'count',
         plot_metric == 'Representation Index' ~ 'RI',
         plot_metric == 'Relative Risk' ~ 'RR',

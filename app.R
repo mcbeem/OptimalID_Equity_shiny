@@ -20,6 +20,7 @@ library(reshape)
 library(DT)
 library(DescTools)
 library(readxl)
+library(writexl)
 library(markdown)
 library(data.table)
 library(giftedCalcs)
@@ -104,7 +105,7 @@ ui <- fluidPage(
                            
                            helpText(
                              "Excel (.xlsx, .xls) and .csv files are supported.",
-                              "Only the first sheet will be read from an excel input file.",
+                             "Only the first sheet will be read from an excel input file.",
                              "Dataset should be prepared according to instructions",
                              a(href="https://r4ds.had.co.nz", target="_blank", "here)")
                            ),
@@ -438,9 +439,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric", 
                                   label = "Equity metric", 
-                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified", 
+                                  choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified", 
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Missing rate"),
+                                  selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
                                 
@@ -645,9 +646,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric2",
                                   label = "Equity metric",
-                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
+                                  choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Missing rate"),
+                                  selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
                                 
@@ -849,9 +850,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric3",
                                   label = "Equity metric",
-                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
+                                  choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Missing rate"),
+                                  selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
                                 
@@ -1053,9 +1054,9 @@ ui <- fluidPage(
                                 selectInput(
                                   inputId = "metric4",
                                   label = "Equity metric",
-                                  choices = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
+                                  choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Missing rate"),
+                                  selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
                                 
@@ -1081,7 +1082,7 @@ ui <- fluidPage(
                                   label = "Equity metric",
                                   choices = c("Count", "Representation Index", "Proportion Identified",
                                               "Relative Risk", "Cramer's V"),
-                                  selected = "Count"),
+                                  selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
                                 
@@ -1107,8 +1108,8 @@ ui <- fluidPage(
                        )
               ),
               
-              # Download panel ----------------------------------------------------------
-              tabPanel("Download",
+              # Report panel ----------------------------------------------------------
+              tabPanel("Download report",
                        
                        HTML("<br>"),
                        
@@ -1131,6 +1132,33 @@ ui <- fluidPage(
                        ),
                        
                        downloadButton("btn_report", "Generate report")
+                       
+              ),
+              
+              
+              # Download data -----------------------------------------------------------
+              tabPanel("Download data",
+                       
+                       HTML("<br>"),
+                       
+                       helpText("Download the data with individual student identification decisions"),
+                       helpText("Note: if the download button is greyed out, make sure that you have removed any unused pathways on the setup tab"),
+                       
+                       radioButtons(
+                         inputId="dataFormat",
+                         label="Data format",
+                         choices=list("xlsx", "csv"),
+                         inline=TRUE
+                       ),
+                       
+                       downloadButton("btn_download", "Download the data"),
+                       
+                       HTML("<br>"),
+                       HTML("<br>"),
+                       
+                       fluidPage(
+                         DTOutput('new_data')
+                       )
                        
               ),
               
@@ -1168,11 +1196,14 @@ server <- function(input, output, session) {
     shinyjs::enable('loadFile')
   })
   
-
-# define reactive objects -------------------------------------------------
-
+  
+  # define reactive objects -------------------------------------------------
+  
   # initialize the 'dat' reactive object for holding the raw data
   dat <- reactiveVal()
+  
+  # initialize the 'download_dat' reactive object for holding the data to be downloaded
+  download_dat <- reactiveVal()
   
   # initialize the 'filters' reactive object
   filters <- reactiveValues(
@@ -1231,21 +1262,22 @@ server <- function(input, output, session) {
     add_btn_enabled = TRUE,
     last_pathway = 1
   )
-
-# create logic for enabling / disabling download button -------------------
-#  condition: all pathways have necessary info specified, a group or groups are selected,
-#   reference levels are designated, and a baseline id variable has been chosen
+  
+  # create logic for enabling / disabling download buttons -------------------
+  #  condition: all pathways have necessary info specified, a group or groups are selected,
+  #   reference levels are designated, and a baseline id variable has been chosen
   observe({
     if (pathway_status$last_pathway == 1 &
         !is.null(input$assessments) &
         !is.null(input$nom) &
         !is.null(input$nom) &
         ((length(input$group) == 1 & !is.null(input$reference_grp1)) |
-        (length(input$group) == 2 & !is.null(input$reference_grp1) & 
-         !is.null(input$reference_grp2))) &
+         (length(input$group) == 2 & !is.null(input$reference_grp1) & 
+          !is.null(input$reference_grp2))) &
         !is.null(input$baseline_id_var)
-        ) {
+    ) {
       shinyjs::enable("btn_report")
+      shinyjs::enable("btn_download")
     } else if (pathway_status$last_pathway == 2 &
                !is.null(input$assessments) &
                !is.null(input$assessments2) &
@@ -1255,8 +1287,9 @@ server <- function(input, output, session) {
                 (length(input$group) == 2 & !is.null(input$reference_grp1) & 
                  !is.null(input$reference_grp2))) &
                !is.null(input$baseline_id_var)
-              ) {
+    ) {
       shinyjs::enable("btn_report")
+      shinyjs::enable("btn_download")
     } else if (pathway_status$last_pathway == 3 &
                !is.null(input$assessments) &
                !is.null(input$assessments2) &
@@ -1268,8 +1301,9 @@ server <- function(input, output, session) {
                 (length(input$group) == 2 & !is.null(input$reference_grp1) & 
                  !is.null(input$reference_grp2))) &
                !is.null(input$baseline_id_var)
-               ) {
+    ) {
       shinyjs::enable("btn_report") 
+      shinyjs::enable("btn_download")
     } else if (pathway_status$last_pathway == 4 &
                !is.null(input$assessments) &
                !is.null(input$assessments2) &
@@ -1284,13 +1318,15 @@ server <- function(input, output, session) {
                  !is.null(input$reference_grp2))) &
                !is.null(input$baseline_id_var)
     ) {
-      shinyjs::enable("btn_report") 
+      shinyjs::enable("btn_report")
+      shinyjs::enable("btn_download")
     } else {
-      shinyjs::disable("btn_report") 
+      shinyjs::disable("btn_report")
+      shinyjs::disable("btn_download")
     }
   })
   
-# define logic for adding / removing pathways -----------------------------
+  # define logic for adding / removing pathways -----------------------------
   
   observeEvent(input$btn_addPathway, {
     
@@ -1450,9 +1486,9 @@ server <- function(input, output, session) {
     
   })  
   
-
-# do the initial data loading when no filtering has been selected ---------
-
+  
+  # do the initial data loading when no filtering has been selected ---------
+  
   observeEvent(input$loadFile, {
     
     infile <- input$file
@@ -1467,15 +1503,20 @@ server <- function(input, output, session) {
     # read the data
     if (file_extension == 'csv') {
       
-        mydata <- read.csv(infile$datapath, header = TRUE)
-        
+      mydata <- read.csv(infile$datapath, header = TRUE)
+      
     } else if (file_extension %in% c('xls', 'xlsx')) {
       
       mydata <- read_excel(path=infile$datapath, sheet=1)
       
     }
-
+    
     if (exists("mydata")) {
+      
+      # store the loaded data in the reactive object
+      #  BEFORE appending the 'overall' columns
+      download_dat(mydata)
+      
       # append the 'overall' column
       mydata$overall = 1
       
@@ -1486,7 +1527,6 @@ server <- function(input, output, session) {
       
       # store the loaded data in the reactive objects
       dat(mydata)
-    
       
       # add the datafile name to the reactive object (for display in the downloaded report)
       upload_dataname$filename = basename(infile$name)
@@ -1509,9 +1549,6 @@ server <- function(input, output, session) {
     } else if (input$fileType == 'excel') {
       mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
     }
-    
-    # append the 'overall' column
-    mydata$overall = 1
     
     filter_group = input$filter_group
     
@@ -1572,7 +1609,16 @@ server <- function(input, output, session) {
     )
     
     # store the loaded data in the reactive object
+    #  BEFORE appending the 'overall' columns
+    download_dat$original_dat = mydata
+    
+    # append the 'overall' column
+    mydata$overall = 1
+    
+    # store the loaded data in the reactive object
     dat(mydata)
+    
+    
     
     # save the current filtering selections so they can be displayed
     #  in the downloaded report (as the inputs are cleared when the selection
@@ -1652,7 +1698,7 @@ server <- function(input, output, session) {
       inputId = "filter_group", 
       choices = variable_names()
     )
-
+    
     updateSelectInput(
       session = session, 
       inputId = "local_norm_grp", 
@@ -1875,31 +1921,58 @@ server <- function(input, output, session) {
         #  this is needed to prevent users from needing to click on the all
         #  the tabs prior to downloading the report
         
-        # get the data out of the reactive object
+        # get the data out of the reactive objects
         mydata = dat()
+        id_data = download_dat()
         
         # assign a new variable in the local environment only!
         #  (we don't want meanscore to appear as a variable for selection)
         mydata$meanscore1 = identify_opti(data=mydata, 
+                                          assessments=input$assessments, 
+                                          nom=input$nom, 
+                                          nom_cutoff=input$nom_cutoff, 
+                                          test_cutoff=input$mean_cutoff,
+                                          listwise=listwise$listwise,
+                                          mode = "meanscores", 
+                                          weights = weights$w[1:length(input$assessments)],
+                                          local_norm=input$local_norm,
+                                          local_norm_type=input$local_norm_type,
+                                          norm_group=input$local_norm_grp)
+        
+        id_data$id_path1 = identify_opti(data=mydata, 
                                          assessments=input$assessments, 
                                          nom=input$nom, 
                                          nom_cutoff=input$nom_cutoff, 
                                          test_cutoff=input$mean_cutoff,
                                          listwise=listwise$listwise,
-                                         mode = "meanscores", 
+                                         mode = "decisions", 
                                          weights = weights$w[1:length(input$assessments)],
                                          local_norm=input$local_norm,
                                          local_norm_type=input$local_norm_type,
                                          norm_group=input$local_norm_grp)
         
         
+        mydata$id_path1 = identify_opti(data=mydata, 
+                                        assessments=input$assessments, 
+                                        nom=input$nom, 
+                                        nom_cutoff=input$nom_cutoff, 
+                                        test_cutoff=input$mean_cutoff,
+                                        listwise=listwise$listwise,
+                                        mode = "decisions", 
+                                        weights = weights$w[1:length(input$assessments)],
+                                        local_norm=input$local_norm,
+                                        local_norm_type=input$local_norm_type,
+                                        norm_group=input$local_norm_grp)
+        
+        #browser()
+        
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
         tables$group_stats_1 <- descr_table(data=mydata,
-                                          group=group,
-                                          reference_grp=filter_string,
-                                          vars=unique(c("meanscore1", input$assessments, input$nom)),
-                                          
+                                            group=group,
+                                            reference_grp=filter_string,
+                                            vars=unique(c("meanscore1", input$assessments, input$nom)),
+                                            
         )
         
         # build the integrated table of all the group statistics over the pathways
@@ -1908,7 +1981,7 @@ server <- function(input, output, session) {
           tables$group_stats_2, 
           tables$group_stats_3, 
           tables$group_stats_4)
-  
+        
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
@@ -1932,6 +2005,10 @@ server <- function(input, output, session) {
                                     selected_pathway_name=input$lbl_pathway1
         )
         
+        
+        # load data into reactive
+        download_dat(id_data)
+        
         # show the plot
         return(results$p)
         
@@ -1949,8 +2026,9 @@ server <- function(input, output, session) {
         #  this is needed to prevent users from needing to click on the all
         #  the tabs prior to downloading the report
         
-        # get the data out of the reactive object
+        # get the data out of the reactive objects
         mydata = dat()
+        id_data = download_dat()
         
         # assign a new variable in the local environment only!
         #  (we don't want meanscore to appear as a variable for selection)
@@ -1966,13 +2044,25 @@ server <- function(input, output, session) {
                                           local_norm_type=input$local_norm_type2,
                                           norm_group=input$local_norm_grp2)
         
+        id_data$id_path2 = identify_opti(data=mydata, 
+                                         assessments=input$assessments2, 
+                                         nom=input$nom2, 
+                                         nom_cutoff=input$nom_cutoff2, 
+                                         test_cutoff=input$mean_cutoff2,
+                                         listwise=listwise$listwise,
+                                         mode = "decisions", 
+                                         weights = weights$w2[1:length(input$assessments2)],
+                                         local_norm=input$local_norm2,
+                                         local_norm_type=input$local_norm_type2,
+                                         norm_group=input$local_norm_grp2)
+        
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
         tables$group_stats_2 <- descr_table(data=mydata,
-                                          group=group,
-                                          reference_grp=filter_string,
-                                          vars=unique(c("meanscore2", input$assessments2, input$nom2)),
-
+                                            group=group,
+                                            reference_grp=filter_string,
+                                            vars=unique(c("meanscore2", input$assessments2, input$nom2)),
+                                            
         )
         
         # build the integrated table of all the group statistics over the pathways
@@ -1981,7 +2071,7 @@ server <- function(input, output, session) {
           tables$group_stats_2,
           tables$group_stats_3,
           tables$group_stats_4)
-
+        
         # 'results' is a list containing both the plot ($p) and the raw equity statistics
         #   table
         
@@ -2004,10 +2094,12 @@ server <- function(input, output, session) {
                                     selected_pathway=1,
                                     selected_pathway_name=input$lbl_pathway2
         )
-
+        
+        # load data into reactive
+        download_dat(id_data)
+        
         # show the plot
         return(results$p)
-        
       }
       
     }) 
@@ -2023,8 +2115,9 @@ server <- function(input, output, session) {
         #  this is needed to prevent users from needing to click on the all
         #  the tabs prior to downloading the report
         
-        # get the data out of the reactive object
+        # get the data out of the reactive objects
         mydata = dat()
+        id_data = download_dat()
         
         # assign a new variable in the local environment only!
         #  (we don't want meanscore to appear as a variable for selection)
@@ -2040,13 +2133,25 @@ server <- function(input, output, session) {
                                           local_norm_type=input$local_norm_type3,
                                           norm_group=input$local_norm_grp3)
         
+        id_data$id_path3 = identify_opti(data=mydata, 
+                                         assessments=input$assessments3, 
+                                         nom=input$nom3, 
+                                         nom_cutoff=input$nom_cutoff3, 
+                                         test_cutoff=input$mean_cutoff3,
+                                         listwise=listwise$listwise,
+                                         mode = "decisions", 
+                                         weights = weights$w3[1:length(input$assessments3)],
+                                         local_norm=input$local_norm3,
+                                         local_norm_type=input$local_norm_type3,
+                                         norm_group=input$local_norm_grp3)
+        
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
         tables$group_stats_3 <- descr_table(data=mydata,
-                                          group=group,
-                                          reference_grp=filter_string,
-                                          vars=unique(c("meanscore3", input$assessments3, input$nom3)),
-
+                                            group=group,
+                                            reference_grp=filter_string,
+                                            vars=unique(c("meanscore3", input$assessments3, input$nom3)),
+                                            
         )
         
         # build the integrated table of all the equity tables over the pathways
@@ -2079,6 +2184,9 @@ server <- function(input, output, session) {
                                     selected_pathway_name=input$lbl_pathway3
         )
         
+        # load data into reactive
+        download_dat(id_data)
+        
         # show the plot
         return(results$p)
         
@@ -2096,8 +2204,9 @@ server <- function(input, output, session) {
         #  this is needed to prevent users from needing to click on the all
         #  the tabs prior to downloading the report
         
-        # get the data out of the reactive object
+        # get the data out of the reactive objects
         mydata = dat()
+        id_data = download_dat()
         
         # assign a new variable in the local environment only!
         #  (we don't want meanscore to appear as a variable for selection)
@@ -2113,13 +2222,25 @@ server <- function(input, output, session) {
                                           local_norm_type=input$local_norm_type4,
                                           norm_group=input$local_norm_grp4)
         
+        id_data$id_path4 = identify_opti(data=mydata, 
+                                         assessments=input$assessments4, 
+                                         nom=input$nom4, 
+                                         nom_cutoff=input$nom_cutoff4, 
+                                         test_cutoff=input$mean_cutoff4,
+                                         listwise=listwise$listwise,
+                                         mode = "decisions", 
+                                         weights = weights$w4[1:length(input$assessments4)],
+                                         local_norm=input$local_norm4,
+                                         local_norm_type=input$local_norm_type4,
+                                         norm_group=input$local_norm_grp4)
+        
         # construct the descriptive statistics table and load it into
         #  the appropriate reactive element
         tables$group_stats_4 <- descr_table(data=mydata,
-                                          group=group,
-                                          reference_grp=filter_string,
-                                          vars=unique(c("meanscore4", input$assessments4, input$nom4)),
-
+                                            group=group,
+                                            reference_grp=filter_string,
+                                            vars=unique(c("meanscore4", input$assessments4, input$nom4)),
+                                            
         )
         
         # build the integrated table of all the group statistics over the pathways
@@ -2152,6 +2273,9 @@ server <- function(input, output, session) {
                                     selected_pathway_name=input$lbl_pathway4
         )
         
+        # load data into reactive
+        download_dat(id_data)
+        
         # show the plot
         return(results$p)
         
@@ -2161,6 +2285,116 @@ server <- function(input, output, session) {
     
     # render marginal plot ----------------------------------------------------
     output$plot_all <- renderPlot({
+      
+      pathways = list()
+      
+      # only render this plot if a group is selected, at least one of the 
+      #   sets of assessments is supplied, and at least one of the nomination
+      #   instruments is supplied
+      if (!is.null(group) & 
+          (!is.null(input$assessments) | 
+           !is.null(input$assessments2) |
+           !is.null(input$assessments3) |
+           !is.null(input$assessments4) ) &
+          (!is.null(input$nom) |
+           !is.null(input$nom2) |
+           !is.null(input$nom3) |
+           !is.null(input$nom4)) ) {
+        
+        # we construct 3 pieces of output here: the plot and both tables
+        #  this is needed to prevent users from needing to click on the all
+        #  the tabs prior to downloading the report
+        
+        # get the data out of the reactive object
+        mydata = dat()
+        
+        # assign a new variable in the local environment only!
+        #  (we don't want meanscore to appear as a variable for selection)
+        
+        pathways = append(pathways, list(pathway_1 = list(
+          assessments=input$assessments,
+          listwise=listwise$listwise,
+          nom=input$nom,
+          nom_cutoff=input$nom_cutoff,
+          test_cutoff=input$mean_cutoff,
+          weights=weights$w[1:length(input$assessments)],
+          local_norm=input$local_norm,
+          local_norm_type=input$local_norm_type,
+          norm_group=input$local_norm_grp)
+        )
+        )
+        
+        if (pathway_status$last_pathway >= 2 & !is.null(input$assessments2) & 
+            !is.null(input$nom2)) {
+          
+          pathways = append(pathways, list(pathway_2 = list(
+            assessments=input$assessments2,
+            listwise=listwise$listwise,
+            nom=input$nom2,
+            nom_cutoff=input$nom_cutoff2,
+            test_cutoff=input$mean_cutoff2,
+            weights=weights$w2[1:length(input$assessments2)],
+            local_norm=input$local_norm2,
+            local_norm_type=input$local_norm_type2,
+            norm_group=input$local_norm_grp2)
+          )
+          )
+        }
+        
+        if (pathway_status$last_pathway >= 3 & !is.null(input$assessments3) & 
+            !is.null(input$nom3)) {
+          
+          pathways = append(pathways, list(pathway_3 = list(
+            assessments=input$assessments3,
+            listwise=listwise$listwise,
+            nom=input$nom3,
+            nom_cutoff=input$nom_cutoff3,
+            test_cutoff=input$mean_cutoff3,
+            weights=weights$w3[1:length(input$assessments3)],
+            local_norm=input$local_norm3,
+            local_norm_type=input$local_norm_type3,
+            norm_group=input$local_norm_grp3)
+          )
+          )
+        }
+        
+        if (pathway_status$last_pathway >= 4 & !is.null(input$assessments4) & 
+            !is.null(input$nom)) {
+          
+          pathways = append(pathways, list(pathway_4 = list(
+            assessments=input$assessments4,
+            listwise=listwise$listwise,
+            nom=input$nom4,
+            nom_cutoff=input$nom_cutoff4,
+            test_cutoff=input$mean_cutoff4,
+            weights=weights$w4[1:length(input$assessments4)],
+            local_norm=input$local_norm4,
+            local_norm_type=input$local_norm_type4,
+            norm_group=input$local_norm_grp4)
+          )
+          )
+        }
+        
+        results = equity_plot_multi(data=mydata, 
+                                    group=input$group,
+                                    reference_grp=filter_string,
+                                    pathways=pathways,
+                                    baseline_id_var=input$baseline_id_var,
+                                    plot_metric=input$metric_all,
+                                    selected_pathway=length(pathways)+1,
+                                    selected_pathway_name="Identified under any pathway"
+        )
+        
+        # show the plot
+        return(results$p)
+        
+      }
+      
+    })   
+    
+    
+    # generate equity statistics table ----------------------------------------
+    output$tbl <- DT::renderDataTable({
       
       pathways = list()
       
@@ -2252,285 +2486,241 @@ server <- function(input, output, session) {
           )
         }
         
-        results = equity_plot_multi(data=mydata, 
-                                    group=input$group,
-                                    reference_grp=filter_string,
-                                    pathways=pathways,
-                                    baseline_id_var=input$baseline_id_var,
-                                    plot_metric=input$metric_all,
-                                    selected_pathway=length(pathways)+1,
-                                    selected_pathway_name="Identified under any pathway"
+        results = list()
+        
+        pathway_label_list = list(
+          input$lbl_pathway1,
+          input$lbl_pathway2,
+          input$lbl_pathway3,
+          input$lbl_pathway4
         )
         
-    # show the plot
-    return(results$p)
-    
-      }
-      
-    })   
-  
-
-# generate equity statistics table ----------------------------------------
-  output$tbl <- DT::renderDataTable({
-    
-    pathways = list()
-  
-    # only render this plot if a group is selected, at least one of the 
-    #   sets of assessments is supplied, and at least one of the nomination
-    #   instruments is supplied
-    if (!is.null(group) & 
-        (!is.null(input$assessments) | 
-         !is.null(input$assessments2) |
-         !is.null(input$assessments3) |
-         !is.null(input$assessments4) ) &
-        (!is.null(input$nom) |
-         !is.null(input$nom2) |
-         !is.null(input$nom3) |
-         !is.null(input$nom4)) ) {
-      
-      # we construct 3 pieces of output here: the plot and both tables
-      #  this is needed to prevent users from needing to click on the all
-      #  the tabs prior to downloading the report
-      
-      # get the data out of the reactive object
-      mydata = dat()
-      
-      # assign a new variable in the local environment only!
-      #  (we don't want meanscore to appear as a variable for selection)
-      
-      pathways = append(pathways, list(pathway_1 = list(
-        assessments=input$assessments,
-        listwise=listwise$listwise,
-        nom=input$nom,
-        nom_cutoff=input$nom_cutoff,
-        test_cutoff=input$mean_cutoff,
-        weights=weights$w[1:length(input$assessments)],
-        local_norm=input$local_norm,
-        local_norm_type=input$local_norm_type,
-        norm_group=input$local_norm_grp)
-      )
-      )
-      
-      
-      if (pathway_status$last_pathway >= 2 & !is.null(input$assessments2) & 
-          !is.null(input$nom2)) {
+        pathway_label_list[[length(pathways)+1]] = "Identified under any pathway"
         
-        pathways = append(pathways, list(pathway_2 = list(
-          assessments=input$assessments2,
-          listwise=listwise$listwise,
-          nom=input$nom2,
-          nom_cutoff=input$nom_cutoff2,
-          test_cutoff=input$mean_cutoff2,
-          weights=weights$w2[1:length(input$assessments2)],
-          local_norm=input$local_norm2,
-          local_norm_type=input$local_norm_type2,
-          norm_group=input$local_norm_grp2)
-        )
-        )
-      }
-      
-      if (pathway_status$last_pathway >= 3 & !is.null(input$assessments3) & 
-          !is.null(input$nom3)) {
-        
-        pathways = append(pathways, list(pathway_3 = list(
-          assessments=input$assessments3,
-          listwise=listwise$listwise,
-          nom=input$nom3,
-          nom_cutoff=input$nom_cutoff3,
-          test_cutoff=input$mean_cutoff3,
-          weights=weights$w3[1:length(input$assessments3)],
-          local_norm=input$local_norm3,
-          local_norm_type=input$local_norm_type3,
-          norm_group=input$local_norm_grp3)
-        )
-        )
-      }
-      
-      if (pathway_status$last_pathway >= 4 & !is.null(input$assessments4) & 
-          !is.null(input$nom)) {
-        
-        pathways = append(pathways, list(pathway_4 = list(
-          assessments=input$assessments4,
-          listwise=listwise$listwise,
-          nom=input$nom4,
-          nom_cutoff=input$nom_cutoff4,
-          test_cutoff=input$mean_cutoff4,
-          weights=weights$w4[1:length(input$assessments4)],
-          local_norm=input$local_norm4,
-          local_norm_type=input$local_norm_type4,
-          norm_group=input$local_norm_grp4)
-        )
-        )
-      }
-      
-      results = list()
-      
-      pathway_label_list = list(
-        input$lbl_pathway1,
-        input$lbl_pathway2,
-        input$lbl_pathway3,
-        input$lbl_pathway4
-      )
-      
-      pathway_label_list[[length(pathways)+1]] = "Identified under any pathway"
-    
-      for (i in 1:(length(pathways)+1)) {
-        
-        this_result = equity_plot_multi(data=mydata, 
-                                    group=input$group,
-                                    reference_grp=filter_string,
-                                    pathways=pathways,
-                                    baseline_id_var=input$baseline_id_var,
-                                    plot_metric=input$metric_all,
-                                    selected_pathway=i,
-                                    selected_pathway_name=pathway_label_list[[i]])$summary_tbl
-        
-        if (i < (length(pathways)+1)) {
-          results[[i]] = process_equity_tbl(tbl=this_result,
-                                            group=group,
-                                            pathway_lbl=pathway_label_list[[i]], 
-                                            pathway_num=i) 
-        } else {
-         
-          if (length(pathways) > 1) {
+        for (i in 1:(length(pathways)+1)) {
+          
+          this_result = equity_plot_multi(data=mydata, 
+                                          group=input$group,
+                                          reference_grp=filter_string,
+                                          pathways=pathways,
+                                          baseline_id_var=input$baseline_id_var,
+                                          plot_metric=input$metric_all,
+                                          selected_pathway=i,
+                                          selected_pathway_name=pathway_label_list[[i]])$summary_tbl
+          
+          if (i < (length(pathways)+1)) {
             results[[i]] = process_equity_tbl(tbl=this_result,
                                               group=group,
-                                              pathway_lbl="Any pathway", 
+                                              pathway_lbl=pathway_label_list[[i]], 
                                               pathway_num=i) 
+          } else {
+            
+            if (length(pathways) > 1) {
+              results[[i]] = process_equity_tbl(tbl=this_result,
+                                                group=group,
+                                                pathway_lbl="Any pathway", 
+                                                pathway_num=i) 
+            }
           }
         }
-      }
-
-    tables$equity_table = do.call('rbind', results)
+        
+        tables$equity_table = do.call('rbind', results)
+        
+        # note: this table is constructed in the render plot call
+        # display the unique rows
+        # the if statement prevents an error message appearing in the app
+        #  if the table hasn't yet been constructed
+        
+        if (!is.null(tables$equity_table)) {
+          tables$equity_table %>% distinct() %>% arrange(comparison)
+        }
+      } # closes first 'if'
+    }, filter="top")
     
-    # note: this table is constructed in the render plot call
-    # display the unique rows
-    # the if statement prevents an error message appearing in the app
-    #  if the table hasn't yet been constructed
     
-    if (!is.null(tables$equity_table)) {
-      tables$equity_table %>% distinct() %>% arrange(comparison)
+    
+    # render descriptive statistics table -------------------------------------
+    output$descr_table <- renderDataTable({
+      
+      # show the table
+      # display the unique rows
+      # the if statement prevents an error message appearing in the app
+      #  if the table hasn't yet been constructed
+      if (!is.null(tables$group_stats)) {
+        tables$group_stats %>% distinct()
       }
-    } # closes first 'if'
-  }, filter="top")
+      
+    }, filter="top")
+    
+    
+  }) # closes observe
   
   
+  # generate report ---------------------------------------------------------
+  output$btn_report <- downloadHandler(
 
-# render descriptive statistics table -------------------------------------
-  output$descr_table <- renderDataTable({
+    filename = function(){paste0("report.", input$reportFormat)},
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      print(paste0("report.", input$reportFormat))
+      
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(
+        data = dat(),
+        run_notes=input$run_notes,
+        file=upload_dataname$filename,
+        data_filter_string=filters$data_filter_string,
+        filter_group=filters$filter_group,
+        filter_ref_grp1=filters$filter_ref_grp1,
+        filter_ref_grp2=filters$filter_ref_grp2,
+        filter_ref_grp3=filters$filter_ref_grp3,
+        group=input$group,
+        reference_grp1=input$reference_grp1,
+        reference_grp2=input$reference_grp2,
+        group_filter_string=filters$group_filter_string,
+        
+        last_pathway = pathway_status$last_pathway,
+        listwise = listwise$listwise,
+        
+        pathway_name1=input$lbl_pathway1,
+        pathway_name2=input$lbl_pathway2,
+        pathway_name3=input$lbl_pathway3,
+        pathway_name4=input$lbl_pathway4,
+        
+        assessments1=input$assessments,
+        assessments2=input$assessments2,
+        assessments3=input$assessments3,
+        assessments4=input$assessments4,
+        
+        weights1=weights$w[1: length(input$assessments)],
+        weights2=weights$w2[1: length(input$assessments2)],
+        weights3=weights$w3[1: length(input$assessments3)],
+        weights4=weights$w4[1: length(input$assessments4)],
+        
+        nom1=input$nom,
+        nom2=input$nom2,
+        nom3=input$nom3,
+        nom4=input$nom4,
+        
+        local_norm1=input$local_norm,
+        local_norm2=input$local_norm2,
+        local_norm3=input$local_norm3,
+        local_norm4=input$local_norm4,
+        
+        local_norm_type1=input$local_norm_type,
+        local_norm_type2=input$local_norm_type2,
+        local_norm_type3=input$local_norm_type3,
+        local_norm_type4=input$local_norm_type4,
+        
+        local_norm_grp1=input$local_norm_grp,
+        local_norm_grp2=input$local_norm_grp2,
+        local_norm_grp3=input$local_norm_grp3,
+        local_norm_grp4=input$local_norm_grp4,
+        
+        nom_cutoff1=input$nom_cutoff,
+        nom_cutoff2=input$nom_cutoff2,
+        nom_cutoff3=input$nom_cutoff3,
+        nom_cutoff4=input$nom_cutoff4,
+        
+        mean_cutoff1=input$mean_cutoff,
+        mean_cutoff2=input$mean_cutoff2,
+        mean_cutoff3=input$mean_cutoff3,
+        mean_cutoff4=input$mean_cutoff4,
+        
+        baseline_id_var=input$baseline_id_var,
+        group_stats_tbl=tables$group_stats)
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app)
+      
+      # display the busy spinner
+      show_modal_spinner(spin = "folding-cube") 
+      
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+      
+      # remove the busy spinner
+      remove_modal_spinner()
+    }
+  )
+  
+
+# output - download data --------------------------------------------------
+  output$btn_download <- downloadHandler(
+    
+    filename = function() {
+      return(
+        paste0('optimal_id_data.', input$dataFormat)
+        )
+    },
+    
+    content = function(file) {
+      
+      # get the data out of the reactive object
+      id_data = download_dat()
+      
+      # add a new column showing id decisions over any path
+      #  but only if there's more than one pathway defined
+      id_names = grep("id_path", names(id_data), value=T)
+      
+      if (length(id_names) > 1) {
+        id_data$id_path_any = apply((id_data[id_names]), 1, max, na.rm=TRUE)
+        # replace Inf with NA
+        id_data$id_path_any[is.infinite(id_data$id_path_any)] = NA
+      }
+      
+      # write the file
+      if (input$dataFormat == 'csv') {
+        
+        write.csv(id_data, file, row.names = FALSE)
+        
+      } else if (input$dataFormat == 'xlsx') {
+        
+        write_xlsx(id_data, file)
+        
+      }
+    }
+  )
+  
+  
+  # render data view for download -------------------------------------
+  output$new_data <- renderDataTable({
     
     # show the table
-    # display the unique rows
-    # the if statement prevents an error message appearing in the app
+     # the if statement prevents an error message appearing in the app
     #  if the table hasn't yet been constructed
     if (!is.null(tables$group_stats)) {
-      tables$group_stats %>% distinct()
+      
+      # get the data out of the reactive object
+      id_data = download_dat()
+      
+      # add a new column showing id decisions over any path
+      #  but only if there's more than one pathway defined
+      id_names = grep("id_path", names(id_data), value=T)
+      
+      if (length(id_names) > 1) {
+        id_data$id_path_any = apply(id_data[id_names], 1, max, na.rm=TRUE)
+        # replace Inf with NA
+        id_data$id_path_any[is.infinite(id_data$id_path_any)] = NA
+      }
+      
+      # display the data
+      id_data
+
     }
     
   }, filter="top")
   
-  
-  }) # closes observe
-
-
-# generate report ---------------------------------------------------------
-output$btn_report <- downloadHandler(
-  # For PDF output, change this to "report.pdf"
-  #filename = "report.pdf",
-  filename = function(){paste0("report.", input$reportFormat)},
-  content = function(file) {
-    # Copy the report file to a temporary directory before processing it, in
-    # case we don't have write permissions to the current working dir (which
-    # can happen when deployed).
-    tempReport <- file.path(tempdir(), "report.Rmd")
-    file.copy("report.Rmd", tempReport, overwrite = TRUE)
-    
-    print(paste0("report.", input$reportFormat))
-    
-    
-    # Set up parameters to pass to Rmd document
-    params <- list(
-      data = dat(),
-      run_notes=input$run_notes,
-      file=upload_dataname$filename,
-      data_filter_string=filters$data_filter_string,
-      filter_group=filters$filter_group,
-      filter_ref_grp1=filters$filter_ref_grp1,
-      filter_ref_grp2=filters$filter_ref_grp2,
-      filter_ref_grp3=filters$filter_ref_grp3,
-      group=input$group,
-      reference_grp1=input$reference_grp1,
-      reference_grp2=input$reference_grp2,
-      group_filter_string=filters$group_filter_string,
       
-      last_pathway = pathway_status$last_pathway,
-      listwise = listwise$listwise,
-      
-      pathway_name1=input$lbl_pathway1,
-      pathway_name2=input$lbl_pathway2,
-      pathway_name3=input$lbl_pathway3,
-      pathway_name4=input$lbl_pathway4,
-      
-      assessments1=input$assessments,
-      assessments2=input$assessments2,
-      assessments3=input$assessments3,
-      assessments4=input$assessments4,
-      
-      weights1=weights$w[1: length(input$assessments)],
-      weights2=weights$w2[1: length(input$assessments2)],
-      weights3=weights$w3[1: length(input$assessments3)],
-      weights4=weights$w4[1: length(input$assessments4)],
-      
-      nom1=input$nom,
-      nom2=input$nom2,
-      nom3=input$nom3,
-      nom4=input$nom4,
-      
-      local_norm1=input$local_norm,
-      local_norm2=input$local_norm2,
-      local_norm3=input$local_norm3,
-      local_norm4=input$local_norm4,
-      
-      local_norm_type1=input$local_norm_type,
-      local_norm_type2=input$local_norm_type2,
-      local_norm_type3=input$local_norm_type3,
-      local_norm_type4=input$local_norm_type4,
-      
-      local_norm_grp1=input$local_norm_grp,
-      local_norm_grp2=input$local_norm_grp2,
-      local_norm_grp3=input$local_norm_grp3,
-      local_norm_grp4=input$local_norm_grp4,
-      
-      nom_cutoff1=input$nom_cutoff,
-      nom_cutoff2=input$nom_cutoff2,
-      nom_cutoff3=input$nom_cutoff3,
-      nom_cutoff4=input$nom_cutoff4,
-      
-      mean_cutoff1=input$mean_cutoff,
-      mean_cutoff2=input$mean_cutoff2,
-      mean_cutoff3=input$mean_cutoff3,
-      mean_cutoff4=input$mean_cutoff4,
-      
-      baseline_id_var=input$baseline_id_var,
-      group_stats_tbl=tables$group_stats)
-    
-    # Knit the document, passing in the `params` list, and eval it in a
-    # child of the global environment (this isolates the code in the document
-    # from the code in this app)
-    
-    # display the busy spinner
-    show_modal_spinner(spin = "folding-cube") 
-    
-    rmarkdown::render(tempReport, output_file = file,
-                      params = params,
-                      envir = new.env(parent = globalenv())
-    )
-    
-    # remove the busy spinner
-    remove_modal_spinner()
-  }
-)
-
 } # closes server
 
 # Run the application 
