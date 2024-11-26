@@ -24,6 +24,7 @@ library(writexl)
 library(markdown)
 library(data.table)
 library(devtools)
+library(matrixcalc)
 #library(giftedCalcs)
 
 
@@ -39,7 +40,13 @@ ui <- fluidPage(
     HTML('
            #border {
               border: 1px solid black;
-          }')
+          }'),
+    "
+    body {
+        -moz-transform: scale(0.85, 0.85); /* Mozilla browsers */
+        zoom: 0.85; /* Other non-webkit browsers */
+        zoom: 85%; /* Webkit browsers */
+    }"
   )),
   
   theme = shinytheme("readable"),
@@ -1546,10 +1553,13 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
+    # get the file extension
+    file_extension <- tools::file_ext(infile$datapath)
+
     # read the data
-    if (input$fileType == 'csv') {
+    if (file_extension == 'csv') {
       mydata <- read.csv(infile$datapath, header = TRUE)
-    } else if (input$fileType == 'excel') {
+    } else if (file_extension %in% c('xls', 'xlsx')) {
       mydata <- read_excel(path=infile$datapath, sheet=input$whichSheet)
     }
     
@@ -1604,23 +1614,24 @@ server <- function(input, output, session) {
         
       }
     }
+
+    if (exists("mydata")) {
     
-    mydata <- dplyr::filter(mydata, eval(parse(text=data_filter_string)))
+        mydata <- dplyr::filter(mydata, eval(parse(text=data_filter_string)))
+        # replace the downloadable data with the filtered set
+        download_dat(mydata)
+        
+        output$dat <- DT::renderDT(
+          mydata
+        )
+        
     
-    output$dat <- DT::renderDT(
-      mydata
-    )
-    
-    # store the loaded data in the reactive object
-    #  BEFORE appending the 'overall' columns
-    download_dat$original_dat = mydata
-    
-    # append the 'overall' column
-    mydata$overall = 1
-    
-    # store the loaded data in the reactive object
-    dat(mydata)
-    
+        # append the 'overall' column
+        mydata$overall = 1
+        
+        # store the loaded data in the reactive object
+        dat(mydata)
+    }
     
     
     # save the current filtering selections so they can be displayed
