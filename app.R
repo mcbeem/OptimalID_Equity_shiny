@@ -23,7 +23,8 @@ library(readxl)
 library(writexl)
 library(markdown)
 library(data.table)
-library(giftedCalcs)
+library(devtools)
+#library(giftedCalcs)
 
 
 # import functions
@@ -1178,6 +1179,8 @@ ui <- fluidPage(
 
 # server ------------------------------------------------------------------
 server <- function(input, output, session) {
+  
+  #devtools::load_all("giftedCalcs")
   
   # initialize the app with a disabled load file action button
   # and a disabled 'remove pathway' button
