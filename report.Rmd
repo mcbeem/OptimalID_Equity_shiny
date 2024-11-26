@@ -526,7 +526,7 @@ if (!is.null(params$group_stats_tbl)) {
 
 
 
-metrics = c("Missing rate", "Count", "Representation Index", "Proportion Identified",
+metrics = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
                         "Relative Risk")
 
 paths = if(params$last_pathway == 1) {               
@@ -538,7 +538,7 @@ paths = if(params$last_pathway == 1) {
 plot_params = expand_grid(metrics, paths)
 
 # remove the row for "missing_rate" and any_pathway, it doesn't exist
-plot_params = plot_params[!(plot_params$metrics == 'Missing rate' & 
+plot_params = plot_params[!(plot_params$metrics == 'Missing Rate' & 
                               plot_params$paths == max(paths) & 
                               max(plot_params$paths) > 1),]
 

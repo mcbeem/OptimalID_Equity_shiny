@@ -9,7 +9,7 @@ The proportion of students in each group with missing data. This is extremely im
 
 The total number of students in each group, as well as the number of identified students in both the baseline system and via Optimal Identification.
 
-### Poportion identified 
+### Proportion identified 
 
 The proportion of students in each group who are identified.
 
