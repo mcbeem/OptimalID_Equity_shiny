@@ -25,8 +25,8 @@ library(markdown)
 library(data.table)
 library(devtools)
 library(matrixcalc)
-#library(giftedCalcs)
-
+library(kableExtra)
+library(flextable)
 
 # import functions
 source("functions.R")
