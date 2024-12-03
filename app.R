@@ -1186,9 +1186,7 @@ ui <- fluidPage(
 
 # server ------------------------------------------------------------------
 server <- function(input, output, session) {
-  
-  #devtools::load_all("giftedCalcs")
-  
+
   # initialize the app with a disabled load file action button
   # and a disabled 'remove pathway' button
   shinyjs::disable('loadFile')
@@ -1930,6 +1928,11 @@ server <- function(input, output, session) {
         tableOutput("z_check") # Define the output ID here, even if it's hidden initially
     })
     
+    # define reactive objects that are triggered when the baseline id variable control is used
+    baseline_id = reactive({
+        list(input$baseline_id_var)
+    })
+    
     # define reactive objects that are triggered when either the nomination or assessments controls are used
     path1_vars = reactive({
         list(input$nom, input$assessments)
@@ -1947,12 +1950,42 @@ server <- function(input, output, session) {
         list(input$nom4, input$assessments4)
     })
     
-
+    
+    # activate a modal warning if the baseline id variable is not 0/1 or TRUE/FALSE-------------
+    observeEvent(baseline_id(),
+                 if (!is.null(input$baseline_id_var)) {
+                 mydata = dat()
+                 
+                 baseline_levels = unique(mydata[[input$baseline_id_var]])
+                 #browser()
+                 
+                 if (!all(baseline_levels %in% c(0, 1, TRUE, FALSE))) {
+                     
+                     showModal(
+                         modalDialog(title="Warning: baseline id variable incorrectly coded",
+                                     tagList(
+                                         HTML(
+                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' is improperly coded. This will cause incorrect results.<br><br>This app requires that the baseline id variable has values of 0/1 or FALSE/TRUE.<br><br>Please either select the correct variable or edit the data file to recode the baseline id variable. You can view the dataset on the 'Data' tab.")
+                                         )
+                                     ), # closes tagList
+                                     easyClose=FALSE,
+                                     size = "xl",
+                                     footer = tagList(
+                                         modalButton("Proceed")
+                                     )
+                         ) # closes modalDialog
+                     ) # closes showModal
+                     
+                    
+                 } # closes if
+                 }
+     ) # closes observeEvent
+    
     # activate the modal warning if the assessments aren't z-scores-------------
     # pathway 1
     
     observeEvent(path1_vars(),
-                 if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
+                 if (!is.null(input$assessments) & !is.null(input$nom)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -1994,7 +2027,7 @@ server <- function(input, output, session) {
     
     # pathway 2
     observeEvent(path2_vars(),
-                 if (!is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
+                 if (!is.null(input$assessments2) & !is.null(input$nom2)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2036,7 +2069,7 @@ server <- function(input, output, session) {
     
     # pathway 3
     observeEvent(path3_vars(),
-                 if (!is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
+                 if (!is.null(input$assessments3) & !is.null(input$nom3)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2079,7 +2112,7 @@ server <- function(input, output, session) {
     
     # pathway 4
     observeEvent(path4_vars(),
-                 if (!is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
+                 if (!is.null(input$assessments4) & !is.null(input$nom4)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2122,7 +2155,7 @@ server <- function(input, output, session) {
     # render plot1 ------------------------------------------------------------
     output$plot <- renderPlot({
       
-      if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
           
         
         # we construct 3 pieces of output here: the plot and both tables
@@ -2228,7 +2261,7 @@ server <- function(input, output, session) {
     output$plot2 <- renderPlot({
       
       
-      if (!is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all
@@ -2317,7 +2350,7 @@ server <- function(input, output, session) {
     output$plot3 <- renderPlot({
       
       
-      if (!is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all
@@ -2406,7 +2439,7 @@ server <- function(input, output, session) {
     output$plot4 <- renderPlot({
       
       
-      if (!is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all
@@ -2496,10 +2529,11 @@ server <- function(input, output, session) {
       
       pathways = list()
       
-      # only render this plot if a group is selected, at least one of the 
+      # only render this plot if a baseline id var is specified, a group is selected, at least one of the 
       #   sets of assessments is supplied, and at least one of the nomination
       #   instruments is supplied
-      if (!is.null(group) & 
+      if (!is.null(input$baseline_id_var) & 
+          !is.null(group) & 
           (!is.null(input$assessments) | 
            !is.null(input$assessments2) |
            !is.null(input$assessments3) |
@@ -2606,10 +2640,11 @@ server <- function(input, output, session) {
       
       pathways = list()
       
-      # only render this plot if a group is selected, at least one of the 
+      # only render this plot if a baseline id var is specified, a group is selected, at least one of the 
       #   sets of assessments is supplied, and at least one of the nomination
       #   instruments is supplied
-      if (!is.null(group) & 
+      if (!is.null(input$baseline_id_var) & 
+          !is.null(group) & 
           (!is.null(input$assessments) | 
            !is.null(input$assessments2) |
            !is.null(input$assessments3) |
