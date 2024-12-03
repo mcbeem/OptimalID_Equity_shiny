@@ -43,9 +43,8 @@ ui <- fluidPage(
           }'),
     "
     body {
-        -moz-transform: scale(0.85, 0.85); /* Mozilla browsers */
-        zoom: 0.85; /* Other non-webkit browsers */
-        zoom: 85%; /* Webkit browsers */
+        transform: scale(0.88); /* Standard scaling set to 88% */
+        transform-origin: top left; /* Adjust the origin to prevent offset issues */
     }"
   )),
   
