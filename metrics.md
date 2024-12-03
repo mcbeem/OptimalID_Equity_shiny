@@ -1,5 +1,5 @@
 
-## Information about the metric reported in this app
+## Information about the metrics reported in this app
 
 ### Missing rate
 
