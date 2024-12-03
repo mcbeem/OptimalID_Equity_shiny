@@ -265,8 +265,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway1",
-                                  label = "Name for pathway 1",
-                                  placeholder = "Pathway1"
+                                  label = HTML('Name for pathway 1<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -448,7 +447,7 @@ ui <- fluidPage(
                                   inputId = "metric", 
                                   label = "Equity metric", 
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified", 
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -472,8 +471,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway2",
-                                  label = "Name for pathway 2",
-                                  placeholder = "Pathway2"
+                                  label = HTML('Name for pathway 2<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -655,7 +653,7 @@ ui <- fluidPage(
                                   inputId = "metric2",
                                   label = "Equity metric",
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -680,8 +678,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway3",
-                                  label = "Name for pathway 3",
-                                  placeholder = "Pathway3"
+                                  label = HTML('Name for pathway 3<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -859,7 +856,7 @@ ui <- fluidPage(
                                   inputId = "metric3",
                                   label = "Equity metric",
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -884,8 +881,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway4",
-                                  label = "Name for pathway 4",
-                                  placeholder = "Pathway4",
+                                  label = HTML('Name for pathway 4<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -1063,7 +1059,7 @@ ui <- fluidPage(
                                   inputId = "metric4",
                                   label = "Equity metric",
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -1089,7 +1085,7 @@ ui <- fluidPage(
                                   inputId = "metric_all",
                                   label = "Equity metric",
                                   choices = c("Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
