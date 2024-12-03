@@ -1186,9 +1186,7 @@ ui <- fluidPage(
 
 # server ------------------------------------------------------------------
 server <- function(input, output, session) {
-  
-  #devtools::load_all("giftedCalcs")
-  
+
   # initialize the app with a disabled load file action button
   # and a disabled 'remove pathway' button
   shinyjs::disable('loadFile')
@@ -1930,6 +1928,11 @@ server <- function(input, output, session) {
         tableOutput("z_check") # Define the output ID here, even if it's hidden initially
     })
     
+    # define reactive objects that are triggered when the baseline id variable control is used
+    baseline_id = reactive({
+        list(input$baseline_id_var)
+    })
+    
     # define reactive objects that are triggered when either the nomination or assessments controls are used
     path1_vars = reactive({
         list(input$nom, input$assessments)
@@ -1947,7 +1950,37 @@ server <- function(input, output, session) {
         list(input$nom4, input$assessments4)
     })
     
-
+    
+    # activate a modal warning if the baseline id variable is not 0/1 or TRUE/FALSE-------------
+    observeEvent(baseline_id(),
+                 if (!is.null(input$baseline_id_var)) {
+                 mydata = dat()
+                 
+                 baseline_levels = unique(mydata[[input$baseline_id_var]])
+                 #browser()
+                 
+                 if (!all(baseline_levels %in% c(0, 1, TRUE, FALSE))) {
+                     
+                     showModal(
+                         modalDialog(title="Warning: baseline id variable incorrectly coded",
+                                     tagList(
+                                         HTML(
+                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' is improperly coded. This will cause incorrect results.<br><br>This app requires that the baseline id variable has values of 0/1 or FALSE/TRUE.<br><br>Please either select the correct variable or edit the data file to recode the baseline id variable.")
+                                         )
+                                     ), # closes tagList
+                                     easyClose=FALSE,
+                                     size = "xl",
+                                     footer = tagList(
+                                         modalButton("Proceed")
+                                     )
+                         ) # closes modalDialog
+                     ) # closes showModal
+                     
+                    
+                 } # closes if
+                 }
+     ) # closes observeEvent
+    
     # activate the modal warning if the assessments aren't z-scores-------------
     # pathway 1
     
