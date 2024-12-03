@@ -1985,7 +1985,7 @@ server <- function(input, output, session) {
     # pathway 1
     
     observeEvent(path1_vars(),
-                 if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
+                 if (!is.null(input$assessments) & !is.null(input$nom)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2027,7 +2027,7 @@ server <- function(input, output, session) {
     
     # pathway 2
     observeEvent(path2_vars(),
-                 if (!is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
+                 if (!is.null(input$assessments2) & !is.null(input$nom2)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2069,7 +2069,7 @@ server <- function(input, output, session) {
     
     # pathway 3
     observeEvent(path3_vars(),
-                 if (!is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
+                 if (!is.null(input$assessments3) & !is.null(input$nom3)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2112,7 +2112,7 @@ server <- function(input, output, session) {
     
     # pathway 4
     observeEvent(path4_vars(),
-                 if (!is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
+                 if (!is.null(input$assessments4) & !is.null(input$nom4)) {
                      # get the data out of the reactive objects
                      mydata = dat()
                      
@@ -2155,7 +2155,7 @@ server <- function(input, output, session) {
     # render plot1 ------------------------------------------------------------
     output$plot <- renderPlot({
       
-      if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
           
         
         # we construct 3 pieces of output here: the plot and both tables
@@ -2261,7 +2261,7 @@ server <- function(input, output, session) {
     output$plot2 <- renderPlot({
       
       
-      if (!is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all
@@ -2350,7 +2350,7 @@ server <- function(input, output, session) {
     output$plot3 <- renderPlot({
       
       
-      if (!is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all
@@ -2439,7 +2439,7 @@ server <- function(input, output, session) {
     output$plot4 <- renderPlot({
       
       
-      if (!is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
+      if (!is.null(input$baseline_id_var) & !is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all
@@ -2529,10 +2529,11 @@ server <- function(input, output, session) {
       
       pathways = list()
       
-      # only render this plot if a group is selected, at least one of the 
+      # only render this plot if a baseline id var is specified, a group is selected, at least one of the 
       #   sets of assessments is supplied, and at least one of the nomination
       #   instruments is supplied
-      if (!is.null(group) & 
+      if (!is.null(input$baseline_id_var) & 
+          !is.null(group) & 
           (!is.null(input$assessments) | 
            !is.null(input$assessments2) |
            !is.null(input$assessments3) |
@@ -2639,10 +2640,11 @@ server <- function(input, output, session) {
       
       pathways = list()
       
-      # only render this plot if a group is selected, at least one of the 
+      # only render this plot if a baseline id var is specified, a group is selected, at least one of the 
       #   sets of assessments is supplied, and at least one of the nomination
       #   instruments is supplied
-      if (!is.null(group) & 
+      if (!is.null(input$baseline_id_var) & 
+          !is.null(group) & 
           (!is.null(input$assessments) | 
            !is.null(input$assessments2) |
            !is.null(input$assessments3) |
