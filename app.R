@@ -43,8 +43,13 @@ ui <- fluidPage(
           }'),
     "
     body {
-        transform: scale(0.88); /* Standard scaling set to 88% */
-        transform-origin: top left; /* Adjust the origin to prevent offset issues */
+         -moz-transform: scale(0.9); /* Mozilla browsers */
+        -moz-transform-origin: top left; /* For Firefox */
+        -webkit-transform: scale(0.9); /* Safari/Chrome/Brave */
+        -webkit-transform-origin: top left;
+        transform: scale(0.9);
+        transform-origin: top left;
+        zoom: 0.9; /* Fallback for browsers that support it */
     }"
   )),
   
@@ -264,7 +269,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway1",
-                                  label = HTML('Name for pathway 1<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
+                                  label = HTML('Name for pathway 1<font size="2"><p style="color:#808080">(Only used in report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -470,7 +475,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway2",
-                                  label = HTML('Name for pathway 2<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
+                                  label = HTML('Name for pathway 2<font size="2"><p style="color:#808080">(Only used in report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -677,7 +682,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway3",
-                                  label = HTML('Name for pathway 3<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
+                                  label = HTML('Name for pathway 3<font size="2"><p style="color:#808080">(Only used in report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -880,7 +885,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway4",
-                                  label = HTML('Name for pathway 4<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
+                                  label = HTML('Name for pathway 4<font size="2"><p style="color:#808080">(Only used in report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -1140,7 +1145,7 @@ ui <- fluidPage(
               
               
               # Download data -----------------------------------------------------------
-              tabPanel("Download data",
+              tabPanel("Download id data",
                        
                        HTML("<br>"),
                        
