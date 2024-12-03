@@ -265,8 +265,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway1",
-                                  label = "Name for pathway 1",
-                                  placeholder = "Pathway1"
+                                  label = HTML('Name for pathway 1<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -448,7 +447,7 @@ ui <- fluidPage(
                                   inputId = "metric", 
                                   label = "Equity metric", 
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified", 
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -472,8 +471,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway2",
-                                  label = "Name for pathway 2",
-                                  placeholder = "Pathway2"
+                                  label = HTML('Name for pathway 2<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -655,7 +653,7 @@ ui <- fluidPage(
                                   inputId = "metric2",
                                   label = "Equity metric",
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -680,8 +678,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway3",
-                                  label = "Name for pathway 3",
-                                  placeholder = "Pathway3"
+                                  label = HTML('Name for pathway 3<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -859,7 +856,7 @@ ui <- fluidPage(
                                   inputId = "metric3",
                                   label = "Equity metric",
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -884,8 +881,7 @@ ui <- fluidPage(
                                 
                                 textInput(
                                   inputId = "lbl_pathway4",
-                                  label = "Name for pathway 4",
-                                  placeholder = "Pathway4",
+                                  label = HTML('Name for pathway 4<font size="1"><p style="color:#686868">(Only used in downloadable report)</font></p>')
                                 ),
                                 
                                 selectizeInput(
@@ -1063,7 +1059,7 @@ ui <- fluidPage(
                                   inputId = "metric4",
                                   label = "Equity metric",
                                   choices = c("Missing Rate", "Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -1089,7 +1085,7 @@ ui <- fluidPage(
                                   inputId = "metric_all",
                                   label = "Equity metric",
                                   choices = c("Count", "Representation Index", "Proportion Identified",
-                                              "Relative Risk", "Cramer's V"),
+                                              "Relative Risk"),
                                   selected = "Proportion Identified"),
                                 
                                 HTML("<br>"),
@@ -1926,10 +1922,204 @@ server <- function(input, output, session) {
       
     }
     
+    output$hidden_ui <- renderUI({
+        tableOutput("z_check") # Define the output ID here, even if it's hidden initially
+    })
+    
+    # define reactive objects that are triggered when either the nomination or assessments controls are used
+    path1_vars = reactive({
+        list(input$nom, input$assessments)
+    })
+    
+    path2_vars = reactive({
+        list(input$nom2, input$assessments2)
+    })
+    
+    path3_vars = reactive({
+        list(input$nom3, input$assessments3)
+    })
+    
+    path4_vars = reactive({
+        list(input$nom4, input$assessments4)
+    })
+    
+
+    # activate the modal warning if the assessments aren't z-scores-------------
+    # pathway 1
+    
+    observeEvent(path1_vars(),
+                 if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
+                     # get the data out of the reactive objects
+                     mydata = dat()
+                     
+                     # check if z-scores
+                     z_check = check_vars_for_z(data=mydata, vars=c(input$nom, input$assessments))
+                     
+                     if (z_check$all_ok == FALSE) {
+                         # get the vars that aren't z-scores
+                         problem_vars = z_check$stats[problem==TRUE, name]
+                         showModal(
+                             modalDialog(title="Warning: variables appear to have incorrect scaling",
+                                         tagList(
+                                             HTML(
+                                                 paste0("The variable(s) ",  paste(problem_vars, collapse = ", "), " appear to not be z-scores. This will cause incorrect results. Please verify that the nomination and assessment variables are z-scores.<br><br>Z-scores should have a mean near zero and a standard deviation near one. The table below shows the mean and standard deviation of each selected variable, along with the number of valid and missing observations.<br><br><br>")
+                                                 ),
+                                             DTOutput("z_check")
+                                         ), # closes tagList
+                                         easyClose=FALSE,
+                                         size = "xl",
+                                         footer = tagList(
+                                             modalButton("Proceed")
+                                         )
+                             ) # closes modalDialog
+                         ) # closes showModal
+                         
+                         # Render the data table within the modal
+                         output$z_check <- renderDT({
+                             datatable(z_check$stats[, .(name, valid, missing, mean, stdev)], options=list(
+                                 dom = 't', # Removes search bar, pagination, and other controls
+                                 pageLength = nrow(z_check$stats), # Show all rows by default
+                                 ordering = FALSE # Disable column sorting
+                             ), rownames = FALSE # Remove row names
+                             )
+                         })
+                         
+                     } # closes if
+                 } # closes external if
+    ) # closes observeEvent
+    
+    # pathway 2
+    observeEvent(path2_vars(),
+                 if (!is.null(group) & !is.null(input$assessments2) & !is.null(input$nom2)) {
+                     # get the data out of the reactive objects
+                     mydata = dat()
+                     
+                     # check if z-scores
+                     z_check = check_vars_for_z(data=mydata, vars=c(input$nom2, input$assessments2))
+                     
+                     if (z_check$all_ok == FALSE) {
+                         # get the vars that aren't z-scores
+                         problem_vars = z_check$stats[problem==TRUE, name]
+                         showModal(
+                             modalDialog(title="Warning: variables appear to have incorrect scaling",
+                                         tagList(
+                                             HTML(
+                                                 paste0("The variable(s) ",  paste(problem_vars, collapse = ", "), " appear to not be z-scores. This will cause incorrect results. Please verify that the nomination and assessment variables are z-scores.<br><br>Z-scores should have a mean near zero and a standard deviation near one. The table below shows the mean and standard deviation of each selected variable, along with the number of valid and missing observations.<br><br><br>")
+                                             ),
+                                             DTOutput("z_check")
+                                         ), # closes tagList
+                                         easyClose=FALSE,
+                                         size = "xl",
+                                         footer = tagList(
+                                             modalButton("Proceed")
+                                         )
+                             ) # closes modalDialog
+                         ) # closes showModal
+                         
+                         # Render the data table within the modal
+                         output$z_check <- renderDT({
+                             datatable(z_check$stats[, .(name, valid, missing, mean, stdev)], options=list(
+                                 dom = 't', # Removes search bar, pagination, and other controls
+                                 pageLength = nrow(z_check$stats), # Show all rows by default
+                                 ordering = FALSE # Disable column sorting
+                             ), rownames = FALSE # Remove row names
+                             )
+                         })
+                         
+                     } # closes if
+                 } # closes external if
+    ) # closes observeEvent
+    
+    # pathway 3
+    observeEvent(path3_vars(),
+                 if (!is.null(group) & !is.null(input$assessments3) & !is.null(input$nom3)) {
+                     # get the data out of the reactive objects
+                     mydata = dat()
+                     
+                     # check if z-scores
+                     z_check = check_vars_for_z(data=mydata, vars=c(input$nom3, input$assessments3))
+                     
+                     if (z_check$all_ok == FALSE) {
+                         # get the vars that aren't z-scores
+                         problem_vars = z_check$stats[problem==TRUE, name]
+                         showModal(
+                             modalDialog(title="Warning: variables appear to have incorrect scaling",
+                                         tagList(
+                                             HTML(
+                                                 paste0("The variable(s) ",  paste(problem_vars, collapse = ", "), " appear to not be z-scores. This will cause incorrect results. Please verify that the nomination and assessment variables are z-scores.<br><br>Z-scores should have a mean near zero and a standard deviation near one. The table below shows the mean and standard deviation of each selected variable, along with the number of valid and missing observations.<br><br><br>")
+                                             ),
+                                             DTOutput("z_check")
+                                         ), # closes tagList
+                                         easyClose=FALSE,
+                                         size = "xl",
+                                         footer = tagList(
+                                             modalButton("Proceed")
+                                         )
+                             ) # closes modalDialog
+                         ) # closes showModal
+                         
+                         # Render the data table within the modal
+                         output$z_check <- renderDT({
+                             datatable(z_check$stats[, .(name, valid, missing, mean, stdev)], options=list(
+                                 dom = 't', # Removes search bar, pagination, and other controls
+                                 pageLength = nrow(z_check$stats), # Show all rows by default
+                                 ordering = FALSE # Disable column sorting
+                             ), rownames = FALSE # Remove row names
+                             )
+                         })
+                         
+                     } # closes if
+                 } # closes external if
+    ) # closes observeEvent
+    
+    
+    # pathway 4
+    observeEvent(path4_vars(),
+                 if (!is.null(group) & !is.null(input$assessments4) & !is.null(input$nom4)) {
+                     # get the data out of the reactive objects
+                     mydata = dat()
+                     
+                     # check if z-scores
+                     z_check = check_vars_for_z(data=mydata, vars=c(input$nom4, input$assessments4))
+                     
+                     if (z_check$all_ok == FALSE) {
+                         # get the vars that aren't z-scores
+                         problem_vars = z_check$stats[problem==TRUE, name]
+                         showModal(
+                             modalDialog(title="Warning: variables appear to have incorrect scaling",
+                                         tagList(
+                                             HTML(
+                                                 paste0("The variable(s) ",  paste(problem_vars, collapse = ", "), " appear to not be z-scores. This will cause incorrect results. Please verify that the nomination and assessment variables are z-scores.<br><br>Z-scores should have a mean near zero and a standard deviation near one. The table below shows the mean and standard deviation of each selected variable, along with the number of valid and missing observations.<br><br><br>")
+                                             ),
+                                             DTOutput("z_check")
+                                         ), # closes tagList
+                                         easyClose=FALSE,
+                                         size = "xl",
+                                         footer = tagList(
+                                             modalButton("Proceed")
+                                         )
+                             ) # closes modalDialog
+                         ) # closes showModal
+                         
+                         # Render the data table within the modal
+                         output$z_check <- renderDT({
+                             datatable(z_check$stats[, .(name, valid, missing, mean, stdev)], options=list(
+                                 dom = 't', # Removes search bar, pagination, and other controls
+                                 pageLength = nrow(z_check$stats), # Show all rows by default
+                                 ordering = FALSE # Disable column sorting
+                             ), rownames = FALSE # Remove row names
+                             )
+                         })
+                         
+                     } # closes if
+                 } # closes external if
+    ) # closes observeEvent
+    
     # render plot1 ------------------------------------------------------------
     output$plot <- renderPlot({
       
       if (!is.null(group) & !is.null(input$assessments) & !is.null(input$nom)) {
+          
         
         # we construct 3 pieces of output here: the plot and both tables
         #  this is needed to prevent users from needing to click on the all

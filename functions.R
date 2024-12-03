@@ -117,6 +117,43 @@ var_mean <- function(r, w = NA) {
   return(var.m)
 }
 
+
+
+#' check_vars_for_z: check selected variables for z-score scaling
+#'
+#' @param data a data.frame
+#' @param vars a vector of variable names to check
+#'
+#' @return a list; all_ok BOOLEAN, stats DATA.FRAME
+
+check_vars_for_z = function(data, vars) {
+    # easier long?
+    data_long = as.data.table(
+        pivot_longer(data, cols=all_of(vars))
+        )
+    
+    data_stats = data_long[, .(valid=sum(!is.na(.SD)),
+                               missing=sum(is.na(.SD)),
+                               mean=mean(value, na.rm=T), 
+                               stdev=sd(value, na.rm=T)),
+                           name]
+    
+    data_stats[, mean_ztest := mean %between% c(-1, 1)]
+    data_stats[, stdev_ztest := stdev %between% c(0.5, 1.5)]
+    
+    data_stats[, mean := round(mean, 2)]
+    data_stats[, stdev := round(stdev, 2)]
+    
+    data_stats[, all_ztest := mean_ztest | stdev_ztest]
+
+    return(list(
+        all_ok = all(data_stats[, all_ztest]),
+        stats = data_stats[, .(name, valid, missing, mean, stdev, problem=!all_ztest)]
+        )
+    )
+}
+
+
 #' descr_table: function for making marginal or conditional APA-formatted
 #'   descriptive statistics tables 
 #'
