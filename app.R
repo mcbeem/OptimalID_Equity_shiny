@@ -1965,7 +1965,7 @@ server <- function(input, output, session) {
                          modalDialog(title="Warning: baseline id variable incorrectly coded",
                                      tagList(
                                          HTML(
-                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' is improperly coded. This will cause incorrect results.<br><br>This app requires that the baseline id variable has values of 0/1 or FALSE/TRUE.<br><br>Please either select the correct variable or edit the data file to recode the baseline id variable.")
+                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' is improperly coded. This will cause incorrect results.<br><br>This app requires that the baseline id variable has values of 0/1 or FALSE/TRUE.<br><br>Please either select the correct variable or edit the data file to recode the baseline id variable. You can view the dataset on the 'Data' tab.")
                                          )
                                      ), # closes tagList
                                      easyClose=FALSE,
