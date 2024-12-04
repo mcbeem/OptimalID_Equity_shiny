@@ -1957,15 +1957,14 @@ server <- function(input, output, session) {
                  mydata = dat()
                  
                  baseline_levels = unique(mydata[[input$baseline_id_var]])
-                 #browser()
-                 
-                 if (!all(baseline_levels %in% c(0, 1, TRUE, FALSE))) {
+
+                 if (!all(baseline_levels %in% c(0, 1, TRUE, FALSE, NA))) {
                      
                      showModal(
                          modalDialog(title="Warning: baseline id variable incorrectly coded",
                                      tagList(
                                          HTML(
-                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' is improperly coded. This will cause incorrect results.<br><br>This app requires that the baseline id variable has values of 0/1 or FALSE/TRUE.<br><br>Please either select the correct variable or edit the data file to recode the baseline id variable. You can view the dataset on the 'Data' tab.")
+                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' is improperly coded. This will cause incorrect results.<br><br>This app requires that the baseline id variable has values of 0/1 or FALSE/TRUE. Missing values (blanks) are allowed.<br><br>Please either select the correct variable or edit the data file to recode the baseline id variable. You can view the dataset on the 'Data' tab.")
                                          )
                                      ), # closes tagList
                                      easyClose=FALSE,
@@ -1978,7 +1977,27 @@ server <- function(input, output, session) {
                      
                     
                  } # closes if
-                 }
+                 
+                 if (NA %in% baseline_levels) {
+                     
+                     n_missing = sum(is.na(mydata[[input$baseline_id_var]]))
+                     
+                     showModal(
+                         modalDialog(title="Warning: baseline id variable contains missing values",
+                                     tagList(
+                                         HTML(
+                                             paste0("The baseline id variable '",  paste(input$baseline_id_var), "' contains missing values. Please verify that this is intended.<br><br>Number of missing values: ", n_missing, ", total number of rows: ", nrow(mydata), "<br><br>Missing values on the baseline id variable are treated like zeros by this app.")
+                                         )
+                                     ), # closes tagList
+                                     easyClose=FALSE,
+                                     size = "xl",
+                                     footer = tagList(
+                                         modalButton("Proceed")
+                                     )
+                         ) # closes modalDialog
+                     ) # closes showModal
+                 } # closes if
+            }
      ) # closes observeEvent
     
     # activate the modal warning if the assessments aren't z-scores-------------
