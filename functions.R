@@ -469,7 +469,7 @@ identify_opti <- function(data, assessments, nom, nom_cutoff, test_cutoff,
     
   
   if (mode == "decisions") {
-      decisions = as.numeric(opti_gifted)
+      decisions = as.factor(as.numeric(opti_gifted))
       
       # replace NA with FALSE -- NOT SURE IF WE WANT THIS
       #decisions[is.na(decisions)] = 0
